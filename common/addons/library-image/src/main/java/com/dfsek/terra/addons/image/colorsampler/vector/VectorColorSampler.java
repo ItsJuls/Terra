@@ -6,12 +6,10 @@ import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.geom.prep.PreparedGeometry;
-import org.locationtech.jts.geom.prep.PreparedGeometryFactory;
 import org.locationtech.jts.index.strtree.STRtree;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -42,7 +40,9 @@ public class VectorColorSampler implements ColorSampler {
     /**
      * Creates a new VectorColorSampler.
      *
-     * @param polygons List of polygons with color data stored in userData
+     * @param polygons List of polygons with color data stored in userData (kept for reference, though index is used)
+     * @param spatialIndex Pre-built spatial index containing the polygons
+     * @param preparedGeometryCache Pre-built cache of prepared geometries
      * @param fallback Fallback sampler for points not inside any polygon
      * @param svgWidth Width of the SVG viewBox
      * @param svgHeight Height of the SVG viewBox
@@ -51,14 +51,17 @@ public class VectorColorSampler implements ColorSampler {
      * @param worldX2 Maximum world X coordinate
      * @param worldZ2 Maximum world Z coordinate
      */
-    public VectorColorSampler(List<Polygon> polygons, ColorSampler fallback,
+    public VectorColorSampler(List<Polygon> polygons,
+                              STRtree spatialIndex,
+                              Map<Polygon, PreparedGeometry> preparedGeometryCache,
+                              ColorSampler fallback,
                               double svgWidth, double svgHeight,
                               double worldX1, double worldZ1,
                               double worldX2, double worldZ2) {
         this.fallback = fallback;
         this.geometryFactory = new GeometryFactory();
-        this.spatialIndex = new STRtree();
-        this.preparedGeometryCache = new HashMap<>();
+        this.spatialIndex = spatialIndex;
+        this.preparedGeometryCache = preparedGeometryCache;
 
         // Calculate transformation from world coordinates to SVG coordinates
         double worldWidth = worldX2 - worldX1;
@@ -69,24 +72,7 @@ public class VectorColorSampler implements ColorSampler {
         this.translateX = -worldX1;
         this.translateZ = -worldZ1;
 
-        LOGGER.info("Building spatial index for {} polygons...", polygons.size());
-        long startTime = System.currentTimeMillis();
-
-        // Build spatial index and prepare geometries
-        PreparedGeometryFactory prepFactory = new PreparedGeometryFactory();
-        for (Polygon polygon : polygons) {
-            Envelope envelope = polygon.getEnvelopeInternal();
-            spatialIndex.insert(envelope, polygon);
-
-            // Pre-compute prepared geometry for faster containment checks
-            preparedGeometryCache.put(polygon, prepFactory.create(polygon));
-        }
-
-        spatialIndex.build();
-
-        long buildTime = System.currentTimeMillis() - startTime;
-        LOGGER.info("Spatial index built in {} ms. VectorColorSampler ready!", buildTime);
-        LOGGER.info("Coordinate transform: World[{},{} to {},{}] -> SVG[0,0 to {},{}]",
+        LOGGER.info("VectorColorSampler initialized. Coordinate transform: World[{},{} to {},{}] -> SVG[0,0 to {},{}]",
             worldX1, worldZ1, worldX2, worldZ2, svgWidth, svgHeight);
     }
 

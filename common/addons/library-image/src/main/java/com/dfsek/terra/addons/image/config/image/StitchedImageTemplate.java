@@ -7,6 +7,8 @@ import com.dfsek.tectonic.api.config.template.object.ObjectTemplate;
 import com.dfsek.tectonic.api.exception.ValidationException;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
 
 import com.dfsek.terra.addons.image.image.Image;
 import com.dfsek.terra.addons.image.image.StitchedImage;
@@ -32,16 +34,26 @@ public class StitchedImageTemplate implements ObjectTemplate<Image>, ValidatedCo
 
     @Override
     public Image get() {
+        ImageCache.init(pack); // Initialize cache before parallel execution
         Image[][] grid = new Image[rows][cols];
-        for(int i = 0; i < rows; i++) {
-            for(int j = 0; j < cols; j++) {
-                try {
-                    grid[i][j] = ImageCache.load(getFormattedPath(i, j), pack);
-                } catch(IOException e) {
-                    throw new RuntimeException(e);
-                }
+        AtomicReference<Exception> error = new AtomicReference<>();
+
+        // Parallel loading of images
+        IntStream.range(0, rows * cols).parallel().forEach(index -> {
+            if (error.get() != null) return; // Stop if error occurred
+            int i = index / cols;
+            int j = index % cols;
+            try {
+                grid[i][j] = ImageCache.load(getFormattedPath(i, j), pack);
+            } catch (Exception e) {
+                error.set(e);
             }
+        });
+
+        if (error.get() != null) {
+            throw new RuntimeException("Failed to load stitched image tiles", error.get());
         }
+
         return new StitchedImage(grid, zeroIndexed);
     }
 
