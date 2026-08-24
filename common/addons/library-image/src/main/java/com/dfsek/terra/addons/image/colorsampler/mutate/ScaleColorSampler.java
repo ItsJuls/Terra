@@ -4,6 +4,8 @@ import com.dfsek.terra.addons.image.colorsampler.ColorSampler;
 
 import com.dfsek.seismic.math.numericanalysis.interpolation.InterpolationFunctions;
 
+import com.dfsek.terra.addons.image.util.ColorUtil;
+
 import java.util.function.IntUnaryOperator;
 
 
@@ -56,11 +58,11 @@ public class ScaleColorSampler implements ColorSampler {
         int c01 = sampler.apply(x0, z0 + 1);
         int c11 = sampler.apply(x0 + 1, z0 + 1);
 
-        int a = bilinearChannel(c00, c10, c01, c11, this::getA, tx, tz);
-        int r = bilinearChannel(c00, c10, c01, c11, this::getR, tx, tz);
-        int g = bilinearChannel(c00, c10, c01, c11, this::getG, tx, tz);
-        int b = bilinearChannel(c00, c10, c01, c11, this::getB, tx, tz);
-        return argb(a, r, g, b);
+        int a = bilinearChannel(c00, c10, c01, c11,  ColorUtil::getAlpha, tx, tz);
+        int r = bilinearChannel(c00, c10, c01, c11, ColorUtil::getRed, tx, tz);
+        int g = bilinearChannel(c00, c10, c01, c11, ColorUtil::getGreen, tx, tz);
+        int b = bilinearChannel(c00, c10, c01, c11, ColorUtil::getBlue, tx, tz);
+        return ColorUtil.argb(a, r, g, b);
     }
 
     private int applyBicubic(double x, double z) {
@@ -76,11 +78,12 @@ public class ScaleColorSampler implements ColorSampler {
             }
         }
 
-        int a = bicubicChannel(grid, this::getA, tx, tz);
-        int r = bicubicChannel(grid, this::getR, tx, tz);
-        int g = bicubicChannel(grid, this::getG, tx, tz);
-        int b = bicubicChannel(grid, this::getB, tx, tz);
-        return argb(a, r, g, b);
+
+        int a = bicubicChannel(grid, ColorUtil::getAlpha, tx, tz);
+        int r = bicubicChannel(grid, ColorUtil::getRed, tx, tz);
+        int g = bicubicChannel(grid, ColorUtil::getGreen, tx, tz);
+        int b = bicubicChannel(grid, ColorUtil::getBlue, tx, tz);
+        return ColorUtil.argb(a, r, g, b);
     }
 
     private static int bilinearChannel(int c00, int c10, int c01, int c11, IntUnaryOperator channel, double tx, double tz) {
@@ -100,14 +103,7 @@ public class ScaleColorSampler implements ColorSampler {
             tx, tz));
     }
 
-    private int getA(int c) { return (c >> 24) & 0xFF; }
-    private int getR(int c) { return (c >> 16) & 0xFF; }
-    private int getG(int c) { return (c >> 8) & 0xFF; }
-    private int getB(int c) { return c & 0xFF; }
 
-    private int argb(int a, int r, int g, int b) {
-        return (a << 24) | (r << 16) | (g << 8) | b;
-    }
 
     private int clamp(double val) {
         return Math.max(0, Math.min(255, (int) val));
