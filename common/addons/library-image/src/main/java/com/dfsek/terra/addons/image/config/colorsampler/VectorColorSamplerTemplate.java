@@ -54,20 +54,9 @@ public class VectorColorSamplerTemplate implements ObjectTemplate<ColorSampler> 
         LOGGER.info("VectorColorSamplerTemplate class loaded. Cache identity: {}", System.identityHashCode(CACHE));
     }
 
-    private static class CachedSvg {
-        final List<Polygon> polygons;
-        final STRtree spatialIndex;
-        final Map<Polygon, PreparedGeometry> preparedGeometryCache;
-        final double width;
-        final double height;
 
-        CachedSvg(List<Polygon> polygons, STRtree spatialIndex, Map<Polygon, PreparedGeometry> preparedGeometryCache, double width, double height) {
-            this.polygons = polygons;
-            this.spatialIndex = spatialIndex;
-            this.preparedGeometryCache = preparedGeometryCache;
-            this.width = width;
-            this.height = height;
-        }
+    private record CachedSvg(List<Polygon> polygons, STRtree spatialIndex, Map<Polygon, PreparedGeometry> preparedGeometryCache,
+                             double width, double height) {
     }
 
     private final ConfigPack pack;
@@ -103,7 +92,7 @@ public class VectorColorSamplerTemplate implements ObjectTemplate<ColorSampler> 
         String cacheKey = resolvedPath.toString();
 
         // Debug logging to verify cache behavior and classloader consistency
-        LOGGER.info("Accessing SVG cache for key: '{}'. Cache size: {}. Cache identity: {}", 
+        LOGGER.info("Accessing SVG cache for key: '{}'. Cache size: {}. Cache identity: {}",
             cacheKey, CACHE.size(), System.identityHashCode(CACHE));
 
         // Use computeIfAbsent to ensure atomic loading - only one thread will load the SVG for a given key
@@ -111,7 +100,7 @@ public class VectorColorSamplerTemplate implements ObjectTemplate<ColorSampler> 
             LOGGER.info("Cache MISS for {}. Loading SVG...", k);
             return loadSvg(resolvedPath);
         });
-        
+
         LOGGER.info("VectorColorSampler config: World bounds X[{} to {}], Z[{} to {}]", worldX1, worldX2, worldZ1, worldZ2);
 
         return new VectorColorSampler(
@@ -163,11 +152,11 @@ public class VectorColorSamplerTemplate implements ObjectTemplate<ColorSampler> 
 
             // Parse all shapes from the SVG
             LOGGER.info("Extracting shapes from SVG...");
-            
+
             // 1. Collect all ShapeElements first
             List<ShapeElement> shapeElements = new ArrayList<>();
             collectShapeElements(diagram.getRoot(), shapeElements);
-            
+
             LOGGER.info("Found {} shape elements. Processing in parallel...", shapeElements.size());
 
             // 2. Process them in parallel
@@ -189,7 +178,7 @@ public class VectorColorSamplerTemplate implements ObjectTemplate<ColorSampler> 
             // Building the index is fast, but prepared geometry creation can be slow.
             // We can parallelize prepared geometry creation too if needed, but let's stick to serial for the map put for now.
             // Actually, we can generate PreparedGeometry in parallel and then collect.
-            
+
             // Let's do a parallel stream to create PreparedGeometries
             // Use a merge function (p1, p2) -> p1 to handle duplicate keys (identical polygons)
             Map<Polygon, PreparedGeometry> tempPrepCache = polygons.parallelStream()
@@ -198,7 +187,7 @@ public class VectorColorSamplerTemplate implements ObjectTemplate<ColorSampler> 
                     prepFactory::create,
                     (existing, replacement) -> existing // Keep existing if duplicate
                 ));
-            
+
             preparedGeometryCache.putAll(tempPrepCache);
 
             for (Polygon polygon : polygons) {
@@ -236,7 +225,7 @@ public class VectorColorSamplerTemplate implements ObjectTemplate<ColorSampler> 
                 SVGElement child = element.getChild(i);
                 collectShapeElements(child, collector);
             } catch (Exception e) {
-                // Skip problematic children
+                LOGGER.warn("Failed to process child element at index {} of {}: {}", i, element.getId(), e.getMessage());
             }
         }
     }
@@ -272,16 +261,14 @@ public class VectorColorSamplerTemplate implements ObjectTemplate<ColorSampler> 
      * Handles complex paths that may contain multiple polygons and holes.
      */
     private List<Polygon> convertShapeToPolygons(Shape shape, int color) {
-        List<Polygon> polygons = new ArrayList<>();
-        PathIterator pathIterator = shape.getPathIterator(null);
-        
+        // 1. Extract raw rings from PathIterator (Fast)
         List<LinearRing> rings = new ArrayList<>();
-        List<Coordinate> currentPath = new ArrayList<>();
+        PathIterator pathIterator = shape.getPathIterator(null);
         double[] coords = new double[6];
+        List<Coordinate> currentPath = new ArrayList<>();
 
         while (!pathIterator.isDone()) {
             int type = pathIterator.currentSegment(coords);
-
             switch (type) {
                 case PathIterator.SEG_MOVETO:
                     if (!currentPath.isEmpty()) {
@@ -291,21 +278,15 @@ public class VectorColorSamplerTemplate implements ObjectTemplate<ColorSampler> 
                     }
                     currentPath.add(new Coordinate(coords[0], coords[1]));
                     break;
-
                 case PathIterator.SEG_LINETO:
                     currentPath.add(new Coordinate(coords[0], coords[1]));
                     break;
-
                 case PathIterator.SEG_QUADTO:
-                    // Approximate quadratic curve with line segments
                     currentPath.add(new Coordinate(coords[2], coords[3]));
                     break;
-
                 case PathIterator.SEG_CUBICTO:
-                    // Approximate cubic curve with line segments
                     currentPath.add(new Coordinate(coords[4], coords[5]));
                     break;
-
                 case PathIterator.SEG_CLOSE:
                     if (!currentPath.isEmpty()) {
                         LinearRing ring = createRingFromPath(currentPath);
@@ -314,67 +295,82 @@ public class VectorColorSamplerTemplate implements ObjectTemplate<ColorSampler> 
                     }
                     break;
             }
-
             pathIterator.next();
         }
-
         if (!currentPath.isEmpty()) {
             LinearRing ring = createRingFromPath(currentPath);
             if (ring != null) rings.add(ring);
         }
 
-        // Optimization: If only one ring, it's a simple polygon (or invalid if self-intersecting, but we assume valid for now)
-        if (rings.size() == 1) {
-            try {
-                Polygon p = geometryFactory.createPolygon(rings.get(0));
-                p.setUserData(color);
-                polygons.add(p);
-                return polygons;
-            } catch (Exception e) {
-                return Collections.emptyList();
-            }
-        }
-
-        // Identify shells and holes
+        // 2. Convert Rings to Polygons and Fix Topology (Expensive but necessary)
         List<Polygon> candidatePolys = new ArrayList<>();
         for (LinearRing ring : rings) {
             try {
                 Polygon p = geometryFactory.createPolygon(ring);
                 if (p.isValid()) {
                     candidatePolys.add(p);
+                } else {
+                    // Attempt buffer(0) fix
+                    try {
+                        org.locationtech.jts.geom.Geometry fixed = p.buffer(0);
+                        if (fixed instanceof Polygon) {
+                            candidatePolys.add((Polygon) fixed);
+                        } else if (fixed instanceof org.locationtech.jts.geom.MultiPolygon) {
+                            for (int i = 0; i < fixed.getNumGeometries(); i++) {
+                                candidatePolys.add((Polygon) fixed.getGeometryN(i));
+                            }
+                        }
+                    } catch (Exception ignored) {}
                 }
-            } catch (Exception e) {
-                // Ignore invalid rings
-            }
+            } catch (Exception ignored) {}
         }
 
-        // Sort by area descending (largest first)
+        if (candidatePolys.isEmpty()) return Collections.emptyList();
+        if (candidatePolys.size() == 1) {
+            Polygon p = candidatePolys.get(0);
+            p.setUserData(color);
+            return Collections.singletonList(p);
+        }
+
+        // 3. Sort by Area Descending (Largest = Shells, Smallest = Holes)
         candidatePolys.sort((p1, p2) -> Double.compare(p2.getArea(), p1.getArea()));
+
+        // 4. Optimized Shell/Hole Detection using STRtree
+        // We put identified SHELLS into an index so we can quickly find parents for holes.
+        STRtree shellIndex = new STRtree();
 
         class ShellWithHoles {
             final Polygon shell;
+            // Use PreparedGeometry for fast containment checks
+            final PreparedGeometry preparedShell;
             final List<LinearRing> holes = new ArrayList<>();
-            ShellWithHoles(Polygon shell) { this.shell = shell; }
+
+            ShellWithHoles(Polygon shell) {
+                this.shell = shell;
+                this.preparedShell = new PreparedGeometryFactory().create(shell);
+            }
         }
 
         List<ShellWithHoles> shells = new ArrayList<>();
 
-        // Optimization: For very large numbers of rings, this O(N^2) loop is slow.
-        // However, usually a single Shape doesn't have THAT many disjoint parts unless it's a massive multipolygon.
-        // If it does, we might need a spatial index here too.
-        // For now, let's keep the loop but maybe add a bounding box check before contains().
-        // JTS contains() already does envelope check, so it's fine.
-
         for (Polygon p : candidatePolys) {
             ShellWithHoles parent = null;
-            for (ShellWithHoles s : shells) {
-                // Check envelope first (fast)
-                if (s.shell.getEnvelopeInternal().contains(p.getEnvelopeInternal()) && s.shell.contains(p)) {
-                    // Check if it is inside a hole (which means it's an island, so a new shell)
+            Envelope pEnv = p.getEnvelopeInternal();
+
+            // Query the index for potential parents (instead of looping all shells)
+            @SuppressWarnings("unchecked")
+            List<ShellWithHoles> candidates = shellIndex.query(pEnv);
+
+            for (ShellWithHoles s : candidates) {
+                // Check exact containment using PreparedGeometry (Fast)
+                if (s.shell.getEnvelopeInternal().contains(pEnv) && s.preparedShell.contains(p)) {
+                    // It is inside this shell. Now check if it is inside an EXISTING hole.
+                    // (An island inside a lake inside an island)
+                    // If it's inside a hole, it's actually a NEW shell, not a hole.
                     boolean insideHole = false;
                     for (LinearRing hole : s.holes) {
-                        // Quick envelope check for hole
-                        if (hole.getEnvelopeInternal().contains(p.getEnvelopeInternal())) {
+                        if (hole.getEnvelopeInternal().contains(pEnv)) {
+                            // We don't cache holes in prepared geom because there are usually few
                             Polygon holePoly = geometryFactory.createPolygon(hole);
                             if (holePoly.contains(p)) {
                                 insideHole = true;
@@ -382,7 +378,7 @@ public class VectorColorSamplerTemplate implements ObjectTemplate<ColorSampler> 
                             }
                         }
                     }
-                    
+
                     if (!insideHole) {
                         parent = s;
                         break;
@@ -393,18 +389,23 @@ public class VectorColorSamplerTemplate implements ObjectTemplate<ColorSampler> 
             if (parent != null) {
                 parent.holes.add(p.getExteriorRing());
             } else {
-                shells.add(new ShellWithHoles(p));
+                // It's a new shell
+                ShellWithHoles newShell = new ShellWithHoles(p);
+                shells.add(newShell);
+                shellIndex.insert(p.getEnvelopeInternal(), newShell);
             }
         }
 
+        // 5. Build Final Polygons
+        List<Polygon> result = new ArrayList<>(shells.size());
         for (ShellWithHoles s : shells) {
             LinearRing[] holesArray = s.holes.toArray(new LinearRing[0]);
             Polygon finalPoly = geometryFactory.createPolygon(s.shell.getExteriorRing(), holesArray);
             finalPoly.setUserData(color);
-            polygons.add(finalPoly);
+            result.add(finalPoly);
         }
 
-        return polygons;
+        return result;
     }
 
     private LinearRing createRingFromPath(List<Coordinate> path) {
