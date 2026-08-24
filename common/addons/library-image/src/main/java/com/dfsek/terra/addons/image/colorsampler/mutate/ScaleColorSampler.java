@@ -3,6 +3,7 @@ package com.dfsek.terra.addons.image.colorsampler.mutate;
 import com.dfsek.terra.addons.image.colorsampler.ColorSampler;
 
 import com.dfsek.seismic.math.numericanalysis.interpolation.InterpolationFunctions;
+import com.dfsek.seismic.math.normalization.NormalizationFunctions;
 
 import com.dfsek.terra.addons.image.util.ColorUtil;
 
@@ -95,19 +96,14 @@ public class ScaleColorSampler implements ColorSampler {
 
     // I think the cubic function I had differ slightly from what Seismic has but it doesnt really matter tbh
     private int bicubicChannel(int[][] grid, IntUnaryOperator channel, double tx, double tz) {
-        return clamp(InterpolationFunctions.biCubicLerp(
+        return (int) NormalizationFunctions.clamp(InterpolationFunctions.biCubicLerp(
             channel.applyAsInt(grid[0][0]), channel.applyAsInt(grid[0][1]), channel.applyAsInt(grid[0][2]), channel.applyAsInt(grid[0][3]),
             channel.applyAsInt(grid[1][0]), channel.applyAsInt(grid[1][1]), channel.applyAsInt(grid[1][2]), channel.applyAsInt(grid[1][3]),
             channel.applyAsInt(grid[2][0]), channel.applyAsInt(grid[2][1]), channel.applyAsInt(grid[2][2]), channel.applyAsInt(grid[2][3]),
             channel.applyAsInt(grid[3][0]), channel.applyAsInt(grid[3][1]), channel.applyAsInt(grid[3][2]), channel.applyAsInt(grid[3][3]),
-            tx, tz));
+            tx, tz), 0, 255);
     }
 
-
-
-    private int clamp(double val) {
-        return Math.max(0, Math.min(255, (int) val));
-    }
 
     private enum InterpolationMethod {
         NEAREST,
