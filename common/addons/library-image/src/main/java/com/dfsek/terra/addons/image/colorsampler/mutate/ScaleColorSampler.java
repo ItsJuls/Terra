@@ -38,15 +38,11 @@ public class ScaleColorSampler implements ColorSampler {
         double sx = x / scaleX;
         double sz = z / scaleZ;
 
-        switch (method) {
-            case BILINEAR:
-                return applyBilinear(sx, sz);
-            case BICUBIC:
-                return applyBicubic(sx, sz);
-            case NEAREST:
-            default:
-                return sampler.apply((int) sx, (int) sz);
-        }
+        return switch (method) {
+            case BILINEAR -> applyBilinear(sx, sz);
+            case BICUBIC -> applyBicubic(sx, sz);
+            case NEAREST -> sampler.apply((int) sx, (int) sz);
+        };
     }
 
     private int applyBilinear(double x, double z) {
@@ -94,7 +90,7 @@ public class ScaleColorSampler implements ColorSampler {
             tx, tz);
     }
 
-    // I think the cubic function I had differ slightly from what Seismic has but it doesnt really matter tbh\
+    // I think the cubic function I had differ slightly from what Seismic has but it doesnt really matter tbh
     private int bicubicChannel(int[][] grid, IntUnaryOperator channel, double tx, double tz) {
         return clamp(InterpolationFunctions.biCubicLerp(
             channel.applyAsInt(grid[0][0]), channel.applyAsInt(grid[0][1]), channel.applyAsInt(grid[0][2]), channel.applyAsInt(grid[0][3]),
