@@ -1,4 +1,4 @@
-package com.dfsek.terra.addons.image.config.seed;
+package com.dfsek.terra.addons.image.noisesampler.seed;
 
 import com.dfsek.seismic.type.vector.Vector2;
 
