@@ -20,6 +20,11 @@ import com.dfsek.terra.addons.image.config.image.StitchedImageTemplate;
 import com.dfsek.terra.addons.image.config.sampler.ChannelSamplerTemplate;
 import com.dfsek.terra.addons.image.config.sampler.DistanceTransformSamplerTemplate;
 import com.dfsek.terra.addons.image.image.Image;
+import com.dfsek.terra.addons.image.noisesampler.PlacedCellularNoiseTemplate;
+import com.dfsek.terra.addons.image.noisesampler.config.ImageSeedSourceTemplate;
+import com.dfsek.terra.addons.image.noisesampler.config.JsonSeedSourceTemplate;
+import com.dfsek.terra.addons.image.noisesampler.config.PointSeedSourceTemplate;
+import com.dfsek.terra.addons.image.noisesampler.seed.SeedSource;
 import com.dfsek.terra.addons.image.operator.DistanceTransform;
 import com.dfsek.terra.addons.manifest.api.AddonInitializer;
 import com.dfsek.terra.api.Platform;
@@ -42,6 +47,10 @@ public class ImageLibraryAddon implements AddonInitializer {
 
     public static final TypeKey<Supplier<ObjectTemplate<Sampler>>> NOISE_SAMPLER_TOKEN = new TypeKey<>() {
     };
+
+    public static final TypeKey<Supplier<ObjectTemplate<SeedSource>>> SEED_SOURCE_TOKEN = new TypeKey<>() {
+    };
+
     @Inject
     private Platform platform;
 
@@ -63,6 +72,11 @@ public class ImageLibraryAddon implements AddonInitializer {
                 CheckedRegistry<Supplier<ObjectTemplate<Image>>> imageRegistry = pack.getOrCreateRegistry(IMAGE_REGISTRY_KEY);
                 imageRegistry.register(addon.key("BITMAP"), () -> new ImageTemplate(pack));
                 imageRegistry.register(addon.key("STITCHED_BITMAP"), () -> new StitchedImageTemplate(pack));
+
+                CheckedRegistry<Supplier<ObjectTemplate<SeedSource>>> seedSourceRegistry = pack.getOrCreateRegistry(SEED_SOURCE_TOKEN);
+                seedSourceRegistry.register(addon.key("IMAGE"), ImageSeedSourceTemplate::new);
+                seedSourceRegistry.register(addon.key("POINTS"), PointSeedSourceTemplate::new);
+                seedSourceRegistry.register(addon.key("JSON"), () -> new JsonSeedSourceTemplate(pack));
             })
             .then(event -> {
                 event.getPack()
@@ -76,6 +90,7 @@ public class ImageLibraryAddon implements AddonInitializer {
                     NOISE_SAMPLER_TOKEN);
                 noiseRegistry.register(addon.key("DISTANCE_TRANSFORM"), DistanceTransformSamplerTemplate::new);
                 noiseRegistry.register(addon.key("CHANNEL"), ChannelSamplerTemplate::new);
+                noiseRegistry.register(addon.key("PLACED_CELLULAR"), PlacedCellularNoiseTemplate::new);
             })
             .then(event -> {
                 CheckedRegistry<Supplier<ObjectTemplate<ColorSampler>>> colorSamplerRegistry = event.getPack().getOrCreateRegistry(
