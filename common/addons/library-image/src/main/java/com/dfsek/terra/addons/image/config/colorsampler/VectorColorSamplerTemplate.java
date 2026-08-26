@@ -1,5 +1,6 @@
 package com.dfsek.terra.addons.image.config.colorsampler;
 
+import com.dfsek.tectonic.api.config.template.annotations.Default;
 import com.dfsek.tectonic.api.config.template.annotations.Value;
 import com.dfsek.tectonic.api.config.template.object.ObjectTemplate;
 import com.dfsek.terra.addons.image.colorsampler.ColorSampler;
@@ -16,9 +17,9 @@ import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LinearRing;
 import org.locationtech.jts.geom.Polygon;
-import org.locationtech.jts.geom.prep.PreparedGeometry;
-import org.locationtech.jts.geom.prep.PreparedGeometryFactory;
+import org.locationtech.jts.algorithm.locate.IndexedPointInAreaLocator;
 import org.locationtech.jts.index.strtree.STRtree;
+import org.locationtech.jts.simplify.TopologyPreservingSimplifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +49,7 @@ public class VectorColorSamplerTemplate implements ObjectTemplate<ColorSampler> 
     private static final Map<String, List<Polygon>> SHAPE_CACHE = new ConcurrentHashMap<>();
     private static final Map<String, double[]> DIMENSION_CACHE = new ConcurrentHashMap<>();
     private static final Map<String, STRtree> STRTREE_CACHE = new ConcurrentHashMap<>();
-    private static final Map<String, Map<Polygon, PreparedGeometry>> PREPARED_CACHE = new ConcurrentHashMap<>();
+    private static final Map<String, Map<Polygon, IndexedPointInAreaLocator>> LOCATOR_CACHE = new ConcurrentHashMap<>();
 
     private final ConfigPack pack;
 
@@ -69,6 +70,10 @@ public class VectorColorSamplerTemplate implements ObjectTemplate<ColorSampler> 
 
     @Value("fallback")
     private ColorSampler fallback;
+
+    @Value("simplify-tolerance")
+    @Default
+    private double simplifyTolerance = 0.0;
 
     private final GeometryFactory geometryFactory = new GeometryFactory();
 
@@ -130,6 +135,18 @@ public class VectorColorSamplerTemplate implements ObjectTemplate<ColorSampler> 
                     throw new RuntimeException("No valid shapes found in SVG: " + svgPath);
                 }
 
+                if(simplifyTolerance > 0) {
+                    List<Polygon> simplified = new ArrayList<>();
+                    for(Polygon p : polygons) {
+                        Object color = p.getUserData();
+                        Polygon s = (Polygon) TopologyPreservingSimplifier.simplify(p, simplifyTolerance);
+                        s.setUserData(color);
+                        simplified.add(s);
+                    }
+                    polygons = simplified;
+                    LOGGER.info("Simplified to {} polygons (tolerance {})", polygons.size(), simplifyTolerance);
+                }
+
                 SHAPE_CACHE.put(cacheKey, polygons);
                 DIMENSION_CACHE.put(cacheKey, new double[]{ svgWidth, svgHeight });
 
@@ -144,19 +161,19 @@ public class VectorColorSamplerTemplate implements ObjectTemplate<ColorSampler> 
             }
         }
 
-        // Build (or retrieve cached) spatial index + prepared geometries.
-        // This is what the sampler's actual constructor requires and must
-        // exist alongside the polygon cache, not be rebuilt on every query.
-        STRtree spatialIndex = STRTREE_CACHE.computeIfAbsent(cacheKey, key -> buildIndex(polygons));
-        Map<Polygon, PreparedGeometry> preparedGeometryCache = PREPARED_CACHE.computeIfAbsent(cacheKey,
-            key -> buildPreparedCache(polygons));
+        // Build (or retrieve cached) spatial index + point-in-area locators.
+        // Built once per SVG path, not rebuilt on every get() call.
+        List<Polygon> finalPolygons = polygons;
+        STRtree spatialIndex = STRTREE_CACHE.computeIfAbsent(cacheKey, key -> buildIndex(finalPolygons));
+        Map<Polygon, IndexedPointInAreaLocator> locatorCache = LOCATOR_CACHE.computeIfAbsent(cacheKey,
+            key -> buildLocatorCache(finalPolygons));
 
         LOGGER.info("World bounds: X[{} to {}], Z[{} to {}]", worldX1, worldX2, worldZ1, worldZ2);
 
         return new VectorColorSampler(
             polygons,
             spatialIndex,
-            preparedGeometryCache,
+            locatorCache,
             fallback,
             svgWidth,
             svgHeight,
@@ -177,10 +194,10 @@ public class VectorColorSamplerTemplate implements ObjectTemplate<ColorSampler> 
         return tree;
     }
 
-    private Map<Polygon, PreparedGeometry> buildPreparedCache(List<Polygon> polygons) {
-        Map<Polygon, PreparedGeometry> cache = new HashMap<>();
+    private Map<Polygon, IndexedPointInAreaLocator> buildLocatorCache(List<Polygon> polygons) {
+        Map<Polygon, IndexedPointInAreaLocator> cache = new HashMap<>();
         for(Polygon polygon : polygons) {
-            cache.put(polygon, PreparedGeometryFactory.prepare(polygon));
+            cache.put(polygon, new IndexedPointInAreaLocator(polygon));
         }
         return cache;
     }

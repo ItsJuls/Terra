@@ -10,6 +10,7 @@ import com.dfsek.terra.addons.image.config.ColorLoader;
 import com.dfsek.terra.addons.image.config.ColorLoader.ColorString;
 import com.dfsek.terra.addons.image.config.ImageLibraryPackConfigTemplate;
 import com.dfsek.terra.addons.image.config.colorsampler.ConstantColorSamplerTemplate;
+import com.dfsek.terra.addons.image.config.colorsampler.VectorColorSamplerTemplate;
 import com.dfsek.terra.addons.image.config.colorsampler.image.SingleImageColorSamplerTemplate;
 import com.dfsek.terra.addons.image.config.colorsampler.image.TileImageColorSamplerTemplate;
 import com.dfsek.terra.addons.image.config.colorsampler.mutate.RotateColorSamplerTemplate;
@@ -95,12 +96,14 @@ public class ImageLibraryAddon implements AddonInitializer {
             .then(event -> {
                 CheckedRegistry<Supplier<ObjectTemplate<ColorSampler>>> colorSamplerRegistry = event.getPack().getOrCreateRegistry(
                     COLOR_PICKER_REGISTRY_KEY);
+                ConfigPack pack = event.getPack();
                 colorSamplerRegistry.register(addon.key("SINGLE_IMAGE"), SingleImageColorSamplerTemplate::new);
                 colorSamplerRegistry.register(addon.key("TILED_IMAGE"), TileImageColorSamplerTemplate::new);
                 colorSamplerRegistry.register(addon.key("COLOR"), ConstantColorSamplerTemplate::new);
                 colorSamplerRegistry.register(addon.key("ROTATE"), RotateColorSamplerTemplate::new);
                 colorSamplerRegistry.register(addon.key("TRANSLATE"), TranslateColorSamplerTemplate::new);
                 colorSamplerRegistry.register(addon.key("SCALE"), ScaleColorSamplerTemplate::new);
+                colorSamplerRegistry.register(addon.key("VECTOR_IMAGE"), () -> new VectorColorSamplerTemplate(pack));
             });
     }
 }
