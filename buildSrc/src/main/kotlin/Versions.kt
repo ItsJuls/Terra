@@ -68,7 +68,7 @@ object Versions {
         const val paperDevBundle = paperBuild
         const val runPaper = "3.1.0"
         const val paperWeight = "2.0.0-beta.22"
-        const val cloud = "2.0.0-beta.12"
+        const val cloud = "2.0.0"
         const val multiverse = "5.3.0"
     }
     
