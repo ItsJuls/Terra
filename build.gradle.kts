@@ -15,7 +15,7 @@ allprojects {
     tasks.withType<JavaCompile>().configureEach {
         options.isFork = true
         options.isIncremental = true
-        options.release.set(21)
+        options.release.set(25)
     }
 
     tasks.withType<Test>().configureEach {
@@ -48,8 +48,15 @@ afterEvaluate {
     forSubProjects(":common:addons") {
         apply(plugin = "com.gradleup.shadow")
 
+        // Shadow (com.gradleup.shadow) now wires shadowJar into the assemble/build lifecycle
+        // itself. The old finalizedBy(shadowJar) here created a *second*, opposite-direction edge
+        // ("shadowJar must run after build") which, combined with Shadow's own
+        // assemble-dependsOn-shadowJar wiring and the standard build-dependsOn-assemble wiring,
+        // formed a genuine cycle: assemble -> shadowJar -> (after) build -> assemble.
+        // dependsOn is one-directional (build requires shadowJar, no reverse ordering constraint)
+        // and matches the working pattern already used in DistributionConfig.kt.
         tasks.named("build") {
-            finalizedBy(tasks.named("shadowJar"))
+            dependsOn(tasks.named("shadowJar"))
         }
 
         dependencies {

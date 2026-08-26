@@ -1,6 +1,7 @@
 import com.dfsek.terra.tectonicdoc.TectonicDocPlugin
 import org.apache.tools.ant.filters.ReplaceTokens
 import org.gradle.api.JavaVersion
+import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.bundling.Jar
@@ -30,8 +31,15 @@ fun Project.configureCompilation() {
     }
     
     configure<JavaPluginExtension> {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
+        sourceCompatibility = JavaVersion.VERSION_25
+        targetCompatibility = JavaVersion.VERSION_25
+        // Pin the actual compiler Gradle uses to JDK 25, independent of whichever JDK launched
+        // the Gradle daemon (JAVA_HOME/PATH). Without this, sourceCompatibility/targetCompatibility
+        // only *declare* the target level -- javac still runs on whatever JVM started the daemon,
+        // and --release 25 fails outright ("release version 25 not supported") if that JVM is
+        // older than 25. A toolchain makes Gradle locate (or auto-provision) a real JDK 25 for
+        // compilation regardless of the ambient JAVA_HOME.
+        toolchain.languageVersion.set(JavaLanguageVersion.of(25))
     }
     
     tasks.withType<JavaCompile> {

@@ -8,7 +8,15 @@ dependencies {
     paperweight.paperDevBundle(Versions.Bukkit.paperDevBundle)
 
     shaded(project(":platforms:bukkit:common"))
-    shaded(project(":platforms:bukkit:nms"))
+    // reobfArtifactConfiguration alone doesn't resolve this: it picks the module's *primary*
+    // artifact, but paperweight still registers "reobf" and "runtimeElements" as separate
+    // consumable configurations, and the "shaded" configuration here doesn't carry attributes
+    // to disambiguate between them via variant-aware matching. Target "runtimeElements" by name
+    // instead of "reobf" -- as of Minecraft 26.1, Paper dropped its internal remapper and the
+    // dev bundle no longer ships reobf mappings at all, so the "reobf" variant (and its backing
+    // reobfJar task) is gone/broken. ":nms" already sets MOJANG_PRODUCTION, so "runtimeElements"
+    // is the Mojang-mapped jar that's actually meant to be consumed here.
+    shaded(project(":platforms:bukkit:nms", configuration = "runtimeElements"))
     shaded("xyz.jpenilla", "reflection-remapper", Versions.Bukkit.reflectionRemapper)
 }
 
