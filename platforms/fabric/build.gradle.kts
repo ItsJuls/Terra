@@ -53,5 +53,13 @@ tasks {
         injectAccessWidener.set(true)
         inputFile.set(shadowJar.get().archiveFile)
         archiveFileName.set("${rootProject.name.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }}-fabric-${project.version}.jar")
+
+        // The shadowJar output is an intermediate, un-remapped artifact (still references
+        // named/Yarn class names, not the game's actual runtime names). It must never be
+        // deployed directly. Delete it once remapJar has consumed it so build/libs only
+        // ever contains the real, deployable jar.
+        doLast {
+            delete(shadowJar.get().archiveFile)
+        }
     }
 }
