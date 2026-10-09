@@ -1,5 +1,7 @@
 package com.dfsek.terra.bukkit.nms;
 
+import com.dfsek.terra.bukkit.PlatformImpl;
+
 import net.minecraft.core.Holder;
 import net.minecraft.core.Holder.Reference;
 import net.minecraft.core.HolderSet;
@@ -36,7 +38,7 @@ public class AwfulBukkitHacks {
 
     private static final Map<ResourceLocation, List<ResourceLocation>> terraBiomeMap = new HashMap<>();
 
-    public static void registerBiomes(ConfigRegistry configRegistry) {
+    public static void registerBiomes(PlatformImpl platform) {
         try {
             LOGGER.info("Hacking biome registry...");
             MappedRegistry<Biome> biomeRegistry = (MappedRegistry<Biome>) RegistryFetcher.biomeRegistry();
@@ -45,7 +47,7 @@ public class AwfulBukkitHacks {
             Reflection.MAPPED_REGISTRY.setFrozen(biomeRegistry, false);
 
             // Register the terra biomes to the registry
-            configRegistry.forEach(pack -> pack.getRegistry(com.dfsek.terra.api.world.biome.Biome.class).forEach((key, biome) -> {
+            platform.getRawConfigRegistry().forEach(pack -> pack.getRegistry(com.dfsek.terra.api.world.biome.Biome.class).forEach((key, biome) -> {
                 try {
                     BukkitPlatformBiome platformBiome = (BukkitPlatformBiome) biome.getPlatformBiome();
 
@@ -55,16 +57,14 @@ public class AwfulBukkitHacks {
 
                     VanillaBiomeProperties vanillaBiomeProperties = biome.getContext().get(VanillaBiomeProperties.class);
 
-                    Biome platform = NMSBiomeInjector.createBiome(biomeRegistry.get(vanillaMinecraftKey).orElseThrow().value(),
-                        vanillaBiomeProperties);
+                    Biome nmsBiome = NMSBiomeInjector.createBiome(biomeRegistry.get(vanillaMinecraftKey).orElseThrow().value(), vanillaBiomeProperties);
+                    ResourceLocation delegateMinecraftKey = ResourceLocation.tryParse(platform.getTerraConfig().getBiomeKey(pack, key).toString());
 
-                    ResourceLocation delegateMinecraftKey = ResourceLocation.fromNamespaceAndPath("terra",
-                        NMSBiomeInjector.createBiomeID(pack, key));
                     NamespacedKey delegateBukkitKey = NamespacedKey.fromString(delegateMinecraftKey.toString());
                     ResourceKey<Biome> delegateKey = ResourceKey.create(Registries.BIOME, delegateMinecraftKey);
 
-                    Reference<Biome> holder = biomeRegistry.register(delegateKey, platform, RegistrationInfo.BUILT_IN);
-                    Reflection.REFERENCE.invokeBindValue(holder, platform); // IMPORTANT: bind holder.
+                    Reference<Biome> holder = biomeRegistry.register(delegateKey, nmsBiome, RegistrationInfo.BUILT_IN);
+                    Reflection.REFERENCE.invokeBindValue(holder, nmsBiome); // IMPORTANT: bind holder.
 
                     platformBiome.getContext().put(new BukkitBiomeInfo(delegateBukkitKey));
                     platformBiome.getContext().put(new NMSBiomeInfo(delegateKey));

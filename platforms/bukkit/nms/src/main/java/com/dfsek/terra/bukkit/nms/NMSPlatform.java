@@ -87,7 +87,7 @@ public class NMSPlatform extends PlatformImpl {
         this.getEventManager().getHandler(FunctionalEventHandler.class)
             .register(internalAddon, PlatformInitializationEvent.class)
             .priority(1)
-            .then(event -> AwfulBukkitHacks.registerBiomes(this.getRawConfigRegistry()))
+            .then(event -> AwfulBukkitHacks.registerBiomes(this.getPlugin().getPlatform()))
             .global();
 
         return internalAddon;

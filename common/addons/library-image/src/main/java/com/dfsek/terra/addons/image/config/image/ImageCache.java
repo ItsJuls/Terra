@@ -26,15 +26,26 @@ import static com.dfsek.terra.api.util.cache.CacheUtils.CACHE_EXECUTOR;
  * Cache prevents configs from loading the same image multiple times into memory
  */
 record ImageCache(LoadingCache<String, Image> cache) implements Properties {
-    public static Image load(String path, ConfigPack pack) throws IOException {
-        ImageLibraryPackConfigTemplate config = pack.getContext().get(ImageLibraryPackConfigTemplate.class);
-        ImageCache images;
+    
+    public static void init(ConfigPack pack) {
         if(!pack.getContext().has(ImageCache.class)) {
-            var cacheBuilder = Caffeine.newBuilder().executor(CACHE_EXECUTOR).scheduler(Scheduler.systemScheduler());
-            if(config.unloadOnTimeout()) cacheBuilder.expireAfterAccess(config.getCacheTimeout(), TimeUnit.SECONDS);
-            images = new ImageCache(cacheBuilder.build(s -> loadImage(s, pack.getRootPath())));
-            pack.getContext().put(images);
-        } else images = pack.getContext().get(ImageCache.class);
+            synchronized (ImageCache.class) {
+                if (!pack.getContext().has(ImageCache.class)) {
+                    ImageLibraryPackConfigTemplate config = pack.getContext().get(ImageLibraryPackConfigTemplate.class);
+                    var cacheBuilder = Caffeine.newBuilder().executor(CACHE_EXECUTOR).scheduler(Scheduler.systemScheduler());
+                    if (config.unloadOnTimeout())
+                        cacheBuilder.expireAfterAccess(config.getCacheTimeout(), TimeUnit.SECONDS);
+                    ImageCache images = new ImageCache(cacheBuilder.build(s -> loadImage(s, pack.getRootPath())));
+                    pack.getContext().put(images);
+                }
+            }
+        }
+    }
+
+    public static Image load(String path, ConfigPack pack) throws IOException {
+        init(pack);
+        ImageLibraryPackConfigTemplate config = pack.getContext().get(ImageLibraryPackConfigTemplate.class);
+        ImageCache images = pack.getContext().get(ImageCache.class);
 
         if(config.loadOnUse()) {
             if(config.unloadOnTimeout()) { // Grab directly from cache if images are to unload on timeout
