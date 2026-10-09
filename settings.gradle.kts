@@ -1,5 +1,11 @@
 rootProject.name = "Terra"
 
+includeBuild("../Seismic") {
+    dependencySubstitution {
+        substitute(module("com.dfsek:seismic")).using(project(":"))
+    }
+}
+
 
 fun includeImmediateChildren(dir: File, type: String) {
     dir.walkTopDown().maxDepth(1).forEach {
