@@ -10,7 +10,7 @@ object Versions {
         const val tectonic = "4.3.1"
         const val paralithic = "2.0.1"
         const val strata = "1.3.2"
-        const val seismic = "2.1.1"
+        const val seismic = "2.5.7"
         
         const val cloud = "2.0.0"
         
@@ -47,7 +47,7 @@ object Versions {
         
         const val minecraft = "1.21.10"
         const val yarn = "$minecraft+build.1"
-        const val fabricLoader = "0.17.2"
+        const val fabricLoader = "0.18.2"
         
         const val architecuryLoom = "1.11.451"
         const val architecturyPlugin = "3.4.162"
@@ -86,13 +86,13 @@ object Versions {
     }
     
     object Allay {
-        const val api = "0.13.0"
+        const val api = "0.20.0"
         const val gson = "2.13.2"
         
-        const val mappings = "15398c1"
-        const val mappingsGenerator = "8fa6058"
+        const val mappings = "366baa6"
+        const val mappingsGenerator = "e957088"
         
-        const val mcmeta = "e85a17c"
+        const val mcmeta = "c976eb3"
     }
     
     object Minestom {
