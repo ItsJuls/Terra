@@ -23,8 +23,10 @@ import com.dfsek.terra.bukkit.BukkitEntity;
 import com.dfsek.terra.bukkit.generator.BukkitChunkGeneratorWrapper;
 import com.dfsek.terra.bukkit.util.BukkitUtils;
 import com.dfsek.terra.bukkit.world.block.data.BukkitBlockState;
+import com.dfsek.terra.bukkit.world.block.data.BukkitBlockStateExtended;
 import com.dfsek.terra.bukkit.world.block.state.BukkitBlockEntity;
 import com.dfsek.terra.bukkit.world.entity.BukkitEntityType;
+import com.dfsek.terra.bukkit.world.entity.BukkitEntityTypeExtended;
 
 
 public class BukkitProtoWorld implements ProtoWorld {
@@ -51,6 +53,9 @@ public class BukkitProtoWorld implements ProtoWorld {
         access(x, y, z, () -> {
             BlockData bukkitData = BukkitAdapter.adapt(data);
             delegate.setBlockData(x, y, z, bukkitData);
+            if(data instanceof BukkitBlockStateExtended extended && ExtendedDataBridge.get() != null) {
+                ExtendedDataBridge.get().loadBlockEntity(delegate, x, y, z, extended.getData().handle());
+            }
             if(physics) {
                 if(BukkitUtils.isLiquid(bukkitData)) {
                     delegate.scheduleFluidUpdate(x, y, z);
@@ -88,6 +93,12 @@ public class BukkitProtoWorld implements ProtoWorld {
 
     @Override
     public Entity spawnEntity(double x, double y, double z, EntityType entityType) {
+        if(entityType instanceof BukkitEntityTypeExtended extended && ExtendedDataBridge.get() != null) {
+            return access((int) x, (int) y, (int) z, () -> {
+                org.bukkit.entity.Entity entity = ExtendedDataBridge.get().spawnEntity(delegate, x, y, z, extended.getData().handle());
+                return entity == null ? null : new BukkitEntity(entity);
+            }).orElse(null);
+        }
         return access((int) x, (int) y, (int) z, () -> new BukkitEntity(
             delegate.spawnEntity(new Location(delegate.getWorld(), x, y, z), ((BukkitEntityType) entityType).getHandle()))).orElse(
             null);

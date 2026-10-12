@@ -97,7 +97,8 @@ public final class MinecraftUtil {
         }
 
         if(blockEntity != null) {
-            blockEntity.setLevel(world);
+            // A level chunk sets the level itself. Block entities of chunks being generated must not reference the level (like in
+            // vanilla), changing them would otherwise access the level and wait for the chunk being generated.
             chunk.setBlockEntity(blockEntity);
         }
     }

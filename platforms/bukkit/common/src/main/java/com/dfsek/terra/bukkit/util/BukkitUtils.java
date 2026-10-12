@@ -19,7 +19,7 @@ public class BukkitUtils {
         return material == Material.WATER || material == Material.LAVA;
     }
 
-    public static EntityType getEntityType(String id) {
+    public static BukkitEntityType getEntityType(String id) {
         if(!id.startsWith("minecraft:")) throw new IllegalArgumentException("Invalid entity identifier " + id);
         String entityID = id.toUpperCase(Locale.ROOT).substring(10);
 

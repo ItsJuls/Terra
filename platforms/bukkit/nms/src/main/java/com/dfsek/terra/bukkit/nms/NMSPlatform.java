@@ -14,6 +14,7 @@ import net.minecraft.world.attribute.AmbientParticle;
 import net.minecraft.world.level.biome.Biome.Precipitation;
 import net.minecraft.world.level.biome.Biome.TemperatureModifier;
 import net.minecraft.world.level.biome.BiomeSpecialEffects.GrassColorModifier;
+import com.dfsek.terra.bukkit.world.ExtendedDataBridge;
 import com.dfsek.terra.bukkit.nms.config.SpawnSettings;
 import org.bukkit.Bukkit;
 
@@ -41,6 +42,11 @@ import com.dfsek.terra.bukkit.nms.config.VillagerTypeTemplate;
 
 
 public class NMSPlatform extends PlatformImpl {
+
+    static {
+        // Needed while config packs load, which happens during construction.
+        ExtendedDataBridge.set(new NMSExtendedDataBridge());
+    }
 
     public NMSPlatform(TerraBukkitPlugin plugin) {
         super(plugin);
