@@ -1,5 +1,6 @@
 package com.dfsek.terra.mod.util;
 
+import com.mojang.serialization.MapCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,11 +10,11 @@ import net.minecraft.commands.arguments.blocks.BlockInput;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.valueproviders.IntProviderType;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.biome.Biome;
@@ -25,7 +26,7 @@ import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.dimension.DimensionType;
-import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
+import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.ticks.ScheduledTick;
 import net.minecraft.world.ticks.TickAccess;
@@ -52,7 +53,7 @@ public final class MinecraftUtil {
 
     }
 
-    public static <T> Optional<Holder<T>> getEntry(Registry<T> registry, ResourceLocation identifier) {
+    public static <T> Optional<Holder<T>> getEntry(Registry<T> registry, Identifier identifier) {
         return registry.getOptional(identifier)
             .flatMap(id -> Optional.ofNullable(registry.wrapAsHolder(id)));
     }
@@ -106,8 +107,8 @@ public final class MinecraftUtil {
     }
 
     public static void registerIntProviderTypes() {
-        IntProviderType<TerraIntProvider> CONSTANT = IntProviderType.register("terra:constant_range",
-            Codecs.TERRA_CONSTANT_RANGE_INT_PROVIDER_TYPE);
+        MapCodec<TerraIntProvider> CONSTANT = Registry.register(BuiltInRegistries.INT_PROVIDER_TYPE,
+            Identifier.fromNamespaceAndPath("terra", "constant_range"), Codecs.TERRA_CONSTANT_RANGE_INT_PROVIDER_TYPE);
 
         TerraIntProvider.TERRA_RANGE_TYPE_TO_INT_PROVIDER_TYPE.put(ConstantRange.class, CONSTANT);
     }
@@ -131,12 +132,12 @@ public final class MinecraftUtil {
         ResourceKey<net.minecraft.world.level.biome.Biome> vanillaKey = ((ProtoPlatformBiome) biome.getPlatformBiome()).get(biomeRegistry);
         biomeRegistry.getOptional(vanillaKey)
             .ifPresentOrElse(vanillaBiome -> {
-                    ResourceLocation terraBiomeIdentifier = ResourceLocation.fromNamespaceAndPath("terra", BiomeUtil.createBiomeID(pack, id));
+                    Identifier terraBiomeIdentifier = Identifier.fromNamespaceAndPath("terra", BiomeUtil.createBiomeID(pack, id));
                     biomeRegistry.getOptional(terraBiomeIdentifier).ifPresentOrElse(
                         terraBiome -> {
-                            List<ConfiguredFeature<?, ?>> flowerFeatures = List.copyOf(
+                            List<Feature> flowerFeatures = List.copyOf(
                                 vanillaBiome.getGenerationSettings()
-                                    .getFlowerFeatures());
+                                    .getBoneMealFeatures());
                             logger.debug("Injecting flora into biome" +
                                          " {} : {}", terraBiomeIdentifier,
                                 flowerFeatures);
@@ -151,11 +152,11 @@ public final class MinecraftUtil {
                 () -> logger.error("No vanilla biome: {}", vanillaKey));
     }
 
-    public static ResourceKey<Biome> registerBiomeKey(ResourceLocation identifier) {
+    public static ResourceKey<Biome> registerBiomeKey(Identifier identifier) {
         return ResourceKey.create(Registries.BIOME, identifier);
     }
 
-    public static ResourceKey<DimensionType> registerDimensionTypeKey(ResourceLocation identifier) {
+    public static ResourceKey<DimensionType> registerDimensionTypeKey(Identifier identifier) {
         return ResourceKey.create(Registries.DIMENSION_TYPE, identifier);
     }
 }

@@ -3,23 +3,25 @@ package com.dfsek.terra.mod;
 import com.dfsek.tectonic.api.TypeRegistry;
 import com.dfsek.tectonic.api.depth.DepthTracker;
 import com.dfsek.tectonic.api.exception.LoadException;
+import net.minecraft.core.HolderGetter;
 import net.minecraft.core.Registry;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.sounds.Music;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
-import net.minecraft.world.entity.npc.VillagerType;
+import net.minecraft.world.entity.npc.villager.VillagerType;
 import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.level.biome.AmbientAdditionsSettings;
-import net.minecraft.world.level.biome.AmbientMoodSettings;
-import net.minecraft.world.level.biome.AmbientParticleSettings;
+import net.minecraft.world.attribute.AmbientAdditionsSettings;
+import net.minecraft.world.attribute.AmbientMoodSettings;
+import net.minecraft.world.attribute.AmbientParticle;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.biome.Biome.Precipitation;
 import net.minecraft.world.level.biome.Biome.TemperatureModifier;
 import net.minecraft.world.level.biome.BiomeSpecialEffects.GrassColorModifier;
-import net.minecraft.world.level.biome.MobSpawnSettings;
+import com.dfsek.terra.mod.config.SpawnSettings;
 import net.minecraft.world.level.biome.MultiNoiseBiomeSourceParameterList;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
@@ -58,7 +60,7 @@ public abstract class ModPlatform extends AbstractPlatform {
 
     public abstract MinecraftServer getServer();
 
-    public void registerWorldTypes(BiConsumer<ResourceLocation, WorldPreset> registerFunction) {
+    public void registerWorldTypes(BiConsumer<Identifier, WorldPreset> registerFunction) {
         HashSet<String> configPacksInMetaPack = new HashSet<>();
         getRawMetaConfigRegistry().forEach(pack -> {
             PresetUtil.createMetaPackPreset(pack, this, false).apply(registerFunction);
@@ -75,8 +77,8 @@ public abstract class ModPlatform extends AbstractPlatform {
     public void register(TypeRegistry registry) {
         super.register(registry);
         registry.registerLoader(PlatformBiome.class, (type, o, loader, depthTracker) -> parseBiome((String) o, depthTracker))
-            .registerLoader(ResourceLocation.class, (type, o, loader, depthTracker) -> {
-                ResourceLocation identifier = ResourceLocation.tryParse((String) o);
+            .registerLoader(Identifier.class, (type, o, loader, depthTracker) -> {
+                Identifier identifier = Identifier.tryParse((String) o);
                 if(identifier == null)
                     throw new LoadException("Invalid identifier: " + o, depthTracker);
                 return identifier;
@@ -87,7 +89,7 @@ public abstract class ModPlatform extends AbstractPlatform {
             .registerLoader(TemperatureModifier.class,
                 (type, o, loader, depthTracker) -> TemperatureModifier.valueOf(((String) o).toUpperCase()))
             .registerLoader(MobCategory.class, (type, o, loader, depthTracker) -> MobCategory.valueOf((String) o))
-            .registerLoader(AmbientParticleSettings.class, BiomeParticleConfigTemplate::new)
+            .registerLoader(AmbientParticle.class, BiomeParticleConfigTemplate::new)
             .registerLoader(SoundEvent.class, SoundEventTemplate::new)
             .registerLoader(AmbientMoodSettings.class, BiomeMoodSoundTemplate::new)
             .registerLoader(AmbientAdditionsSettings.class, BiomeAdditionsSoundTemplate::new)
@@ -96,12 +98,12 @@ public abstract class ModPlatform extends AbstractPlatform {
             .registerLoader(SpawnCostConfig.class, SpawnCostConfig::new)
             .registerLoader(SpawnEntryConfig.class, SpawnEntryConfig::new)
             .registerLoader(SpawnTypeConfig.class, SpawnTypeConfig::new)
-            .registerLoader(MobSpawnSettings.class, SpawnSettingsTemplate::new)
+            .registerLoader(SpawnSettings.class, SpawnSettingsTemplate::new)
             .registerLoader(VillagerType.class, VillagerTypeTemplate::new);
     }
 
     private ProtoPlatformBiome parseBiome(String id, DepthTracker tracker) throws LoadException {
-        ResourceLocation identifier = ResourceLocation.tryParse(id);
+        Identifier identifier = Identifier.tryParse(id);
         if(!biomeRegistry().containsKey(identifier)) throw new LoadException("Invalid Biome ID: " + identifier, tracker); // failure.
         return new ProtoPlatformBiome(identifier);
     }
@@ -122,6 +124,11 @@ public abstract class ModPlatform extends AbstractPlatform {
     public abstract Registry<MultiNoiseBiomeSourceParameterList> multiNoiseBiomeSourceParameterListRegistry();
 
     public abstract Registry<Enchantment> enchantmentRegistry();
+
+    /**
+     * Lookup for blocks and block tags that is valid while dynamic registries (dimension types, presets, ...) are being created.
+     */
+    public abstract HolderGetter<Block> blockLookup();
 
     @Override
     public @NotNull WorldHandle getWorldHandle() {

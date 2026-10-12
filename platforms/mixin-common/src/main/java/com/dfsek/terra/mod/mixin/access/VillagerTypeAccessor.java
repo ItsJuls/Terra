@@ -5,7 +5,7 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 import java.util.Map;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.entity.npc.VillagerType;
+import net.minecraft.world.entity.npc.villager.VillagerType;
 import net.minecraft.world.level.biome.Biome;
 
 

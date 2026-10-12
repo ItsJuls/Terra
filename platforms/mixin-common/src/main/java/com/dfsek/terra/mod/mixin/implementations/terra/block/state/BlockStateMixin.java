@@ -1,8 +1,6 @@
 package com.dfsek.terra.mod.mixin.implementations.terra.block.state;
 
 
-import com.mojang.serialization.MapCodec;
-import it.unimi.dsi.fastutil.objects.Reference2ObjectArrayMap;
 import org.spongepowered.asm.mixin.Implements;
 import org.spongepowered.asm.mixin.Interface;
 import org.spongepowered.asm.mixin.Intrinsic;
@@ -17,15 +15,14 @@ import net.minecraft.world.level.block.state.StateHolder;
 import com.dfsek.terra.api.block.BlockType;
 import com.dfsek.terra.api.block.state.BlockState;
 import com.dfsek.terra.api.block.state.properties.Property;
-import com.dfsek.terra.mod.mixin.access.StateAccessor;
 
 
 @Mixin(BlockStateBase.class)
 @Implements(@Interface(iface = BlockState.class, prefix = "terra$"))
 public abstract class BlockStateMixin extends StateHolder<Block, net.minecraft.world.level.block.state.BlockState> {
-    private BlockStateMixin(Block owner, Reference2ObjectArrayMap<net.minecraft.world.level.block.state.properties.Property<?>, Comparable<?>> entries,
-                            MapCodec<net.minecraft.world.level.block.state.BlockState> codec) {
-        super(owner, entries, codec);
+    private BlockStateMixin(Block owner, net.minecraft.world.level.block.state.properties.Property<?>[] propertyKeys,
+                            Comparable<?>[] values) {
+        super(owner, propertyKeys, values);
     }
 
     @Shadow
@@ -66,10 +63,10 @@ public abstract class BlockStateMixin extends StateHolder<Block, net.minecraft.w
     @Intrinsic
     public String terra$getAsString(boolean properties) {
         StringBuilder data = new StringBuilder(BuiltInRegistries.BLOCK.getKey(getBlock()).toString());
-        if(properties && !getValues().isEmpty()) {
+        if(properties && !getProperties().isEmpty()) {
             data.append('[');
             data.append(
-                getValues().entrySet().stream().map(StateAccessor.getPropertyMapPrinter()).collect(Collectors.joining(",")));
+                getValues().map(value -> value.property().getName() + "=" + value.valueName()).collect(Collectors.joining(",")));
             data.append(']');
         }
         return data.toString();

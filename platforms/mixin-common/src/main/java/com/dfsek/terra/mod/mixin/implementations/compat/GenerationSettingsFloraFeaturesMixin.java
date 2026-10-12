@@ -9,21 +9,21 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.List;
 import net.minecraft.world.level.biome.BiomeGenerationSettings;
-import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
+import net.minecraft.world.level.levelgen.feature.Feature;
 import com.dfsek.terra.mod.mixin_ifaces.FloraFeatureHolder;
 
 
 @Mixin(BiomeGenerationSettings.class)
 @Implements(@Interface(iface = FloraFeatureHolder.class, prefix = "terra$"))
 public class GenerationSettingsFloraFeaturesMixin {
-    private List<ConfiguredFeature<?, ?>> flora;
+    private List<Feature> flora;
 
-    public void terra$setFloraFeatures(List<ConfiguredFeature<?, ?>> features) {
+    public void terra$setFloraFeatures(List<Feature> features) {
         this.flora = features;
     }
 
-    @Inject(method = "getFlowerFeatures", cancellable = true, at = @At("HEAD"))
-    public void inject(CallbackInfoReturnable<List<ConfiguredFeature<?, ?>>> cir) {
+    @Inject(method = "getBoneMealFeatures", cancellable = true, at = @At("HEAD"))
+    public void inject(CallbackInfoReturnable<List<Feature>> cir) {
         if(flora != null) {
             cir.setReturnValue(flora);
         }

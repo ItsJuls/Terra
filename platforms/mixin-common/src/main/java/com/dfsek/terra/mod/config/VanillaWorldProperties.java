@@ -6,7 +6,7 @@ import com.dfsek.tectonic.api.config.template.annotations.Value;
 import com.dfsek.terra.api.properties.Properties;
 import com.dfsek.terra.api.util.range.ConstantRange;
 import com.dfsek.terra.api.util.range.Range;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 
 public class VanillaWorldProperties implements ConfigTemplate, Properties {
@@ -61,11 +61,11 @@ public class VanillaWorldProperties implements ConfigTemplate, Properties {
 
     @Value("minecraft.infiniburn")
     @Default
-    private ResourceLocation infiniburn = null;
+    private Identifier infiniburn = null;
 
     @Value("minecraft.effects")
     @Default
-    private ResourceLocation effects = null;
+    private Identifier effects = null;
 
     @Value("minecraft.ambient-light")
     @Default
@@ -144,11 +144,11 @@ public class VanillaWorldProperties implements ConfigTemplate, Properties {
         return logicalHeight;
     }
 
-    public ResourceLocation getInfiniburn() {
+    public Identifier getInfiniburn() {
         return infiniburn;
     }
 
-    public ResourceLocation getEffects() {
+    public Identifier getEffects() {
         return effects;
     }
 

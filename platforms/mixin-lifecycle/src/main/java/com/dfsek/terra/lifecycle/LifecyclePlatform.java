@@ -4,6 +4,7 @@ import ca.solostudios.strata.Versions;
 import ca.solostudios.strata.parser.tokenizer.ParseException;
 import ca.solostudios.strata.version.Version;
 import net.minecraft.SharedConstants;
+import net.minecraft.core.HolderGetter;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
@@ -11,6 +12,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.MultiNoiseBiomeSourceParameterList;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
 import org.slf4j.Logger;
@@ -37,6 +39,7 @@ public abstract class LifecyclePlatform extends ModPlatform {
     private static final AtomicReference<Registry<NoiseGeneratorSettings>> SETTINGS = new AtomicReference<>();
     private static final AtomicReference<Registry<MultiNoiseBiomeSourceParameterList>> NOISE = new AtomicReference<>();
     private static final AtomicReference<Registry<Enchantment>> ENCHANTMENT = new AtomicReference<>();
+    private static final AtomicReference<HolderGetter<Block>> BLOCKS = new AtomicReference<>();
     private static final AtomicReference<RegistryAccess.Frozen> DYNAMIC_REGISTRY_MANAGER = new AtomicReference<>();
     private static MinecraftServer server;
     private int generationThreads;
@@ -58,12 +61,14 @@ public abstract class LifecyclePlatform extends ModPlatform {
                                      Registry<DimensionType> dimensionTypeRegistry,
                                      Registry<NoiseGeneratorSettings> chunkGeneratorSettingsRegistry,
                                      Registry<MultiNoiseBiomeSourceParameterList> multiNoiseBiomeSourceParameterListRegistry,
-                                     Registry<Enchantment> enchantmentRegistry) {
+                                     Registry<Enchantment> enchantmentRegistry,
+                                     HolderGetter<Block> blockLookup) {
         BIOMES.set(biomeRegistry);
         DIMENSIONS.set(dimensionTypeRegistry);
         SETTINGS.set(chunkGeneratorSettingsRegistry);
         NOISE.set(multiNoiseBiomeSourceParameterListRegistry);
         ENCHANTMENT.set(enchantmentRegistry);
+        BLOCKS.set(blockLookup);
     }
 
     public static void setDynamicRegistryManager(RegistryAccess.Frozen dynamicRegistryManager) {
@@ -161,6 +166,11 @@ public abstract class LifecyclePlatform extends ModPlatform {
     @Override
     public Registry<Enchantment> enchantmentRegistry() {
         return ENCHANTMENT.get();
+    }
+
+    @Override
+    public HolderGetter<Block> blockLookup() {
+        return BLOCKS.get();
     }
 
     protected abstract Collection<BaseAddon> getPlatformMods();

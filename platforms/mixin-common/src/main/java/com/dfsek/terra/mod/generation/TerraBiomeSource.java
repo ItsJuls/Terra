@@ -25,6 +25,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import net.minecraft.core.Holder;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.BiomeResolver;
 import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.biome.Climate.Sampler;
 import com.dfsek.terra.api.config.ConfigPack;
@@ -60,10 +61,15 @@ public class TerraBiomeSource extends BiomeSource {
     }
 
     @Override
-    public Holder<Biome> getNoiseBiome(int biomeX, int biomeY, int biomeZ, Sampler Sampler) {
+    public BiomeResolver createResolver(Sampler sampler) {
+        long seed = SeedHack.getSeed(sampler);
+        return (biomeX, biomeY, biomeZ) -> getNoiseBiome(biomeX, biomeY, biomeZ, seed);
+    }
+
+    public Holder<Biome> getNoiseBiome(int biomeX, int biomeY, int biomeZ, long seed) {
         return ((ProtoPlatformBiome) pack
             .getBiomeProvider()
-            .getBiome(biomeX << 2, biomeY << 2, biomeZ << 2, SeedHack.getSeed(Sampler))
+            .getBiome(biomeX << 2, biomeY << 2, biomeZ << 2, seed)
             .getPlatformBiome()).getDelegate();
     }
 

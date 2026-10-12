@@ -9,8 +9,8 @@ import java.util.Objects;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.npc.VillagerType;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.npc.villager.VillagerType;
 import com.dfsek.terra.api.config.ConfigPack;
 import com.dfsek.terra.api.world.biome.Biome;
 import com.dfsek.terra.mod.CommonPlatform;
@@ -66,7 +66,7 @@ public final class LifecycleBiomeUtil {
             if(vanilaBiome == null) {
                 String vanillaBiomeName;
                 if(vanilla != null) {
-                    vanillaBiomeName = vanilla.location().toString();
+                    vanillaBiomeName = vanilla.identifier().toString();
                 } else {
                     vanillaBiomeName = "NULL";
                 }
@@ -80,7 +80,7 @@ public final class LifecycleBiomeUtil {
             net.minecraft.world.level.biome.Biome minecraftBiome = BiomeUtil.createBiome(Objects.requireNonNull(vanilaBiome),
                 vanillaBiomeProperties);
 
-            ResourceLocation identifier = ResourceLocation.fromNamespaceAndPath("terra", BiomeUtil.createBiomeID(pack, id));
+            Identifier identifier = Identifier.fromNamespaceAndPath("terra", BiomeUtil.createBiomeID(pack, id));
 
             if(registry.containsKey(identifier)) {
                 ((ProtoPlatformBiome) biome.getPlatformBiome()).setDelegate(MinecraftUtil.getEntry(registry, identifier)
@@ -88,7 +88,7 @@ public final class LifecycleBiomeUtil {
             } else {
                 ((ProtoPlatformBiome) biome.getPlatformBiome()).setDelegate(Registry.registerForHolder(registry,
                     MinecraftUtil.registerBiomeKey(identifier)
-                        .location(),
+                        .identifier(),
                     minecraftBiome));
             }
 
@@ -99,7 +99,7 @@ public final class LifecycleBiomeUtil {
                 Objects.requireNonNullElse(vanillaBiomeProperties.getVillagerType(),
                     villagerMap.getOrDefault(vanilla, VillagerType.PLAINS)));
 
-            BiomeUtil.TERRA_BIOME_MAP.computeIfAbsent(vanilla.location(), i -> new ArrayList<>()).add(identifier);
+            BiomeUtil.TERRA_BIOME_MAP.computeIfAbsent(vanilla.identifier(), i -> new ArrayList<>()).add(identifier);
         }
     }
 

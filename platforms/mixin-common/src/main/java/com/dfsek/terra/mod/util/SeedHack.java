@@ -1,29 +1,33 @@
 package com.dfsek.terra.mod.util;
 
-import it.unimi.dsi.fastutil.objects.Object2LongMap;
-import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
+import com.google.common.collect.MapMaker;
 import net.minecraft.world.level.biome.Climate.Sampler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
+
 
 /**
  * Holder for hacky biome source seed workaround
+ * <p>
+ * Climate samplers are created on demand (e.g. once per generated chunk), so samplers are weakly referenced to avoid
+ * leaking them.
  */
 public class SeedHack {
     private static final Logger LOGGER = LoggerFactory.getLogger(SeedHack.class);
-
-    private static final Object2LongMap<Sampler> seedMap = new Object2LongOpenHashMap<>();
+    private static final Map<Sampler, Long> seedMap = new MapMaker().weakKeys().makeMap();
 
     public static long getSeed(Sampler sampler) {
-        if(!seedMap.containsKey(sampler)) {
+        Long seed = seedMap.get(sampler);
+        if(seed == null) {
             throw new IllegalArgumentException("Sampler is not registered: " + sampler);
         }
-        return seedMap.getLong(sampler);
+        return seed;
     }
 
     public static void register(Sampler sampler, long seed) {
-        LOGGER.info("Registered seed {} to sampler {}", seed, sampler.hashCode());
+        LOGGER.trace("Registered seed {} to sampler {}", seed, System.identityHashCode(sampler));
         seedMap.put(sampler, seed);
     }
 }

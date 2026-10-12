@@ -21,18 +21,18 @@ import java.util.Objects;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.biome.Biome;
 import com.dfsek.terra.api.world.biome.PlatformBiome;
 import com.dfsek.terra.mod.util.MinecraftUtil;
 
 
 public class ProtoPlatformBiome implements PlatformBiome {
-    private final ResourceLocation identifier;
+    private final Identifier identifier;
 
     private Holder<Biome> delegate;
 
-    public ProtoPlatformBiome(ResourceLocation identifier) {
+    public ProtoPlatformBiome(Identifier identifier) {
         this.identifier = identifier;
     }
 
@@ -41,7 +41,7 @@ public class ProtoPlatformBiome implements PlatformBiome {
     }
 
     @Override
-    public ResourceLocation getHandle() {
+    public Identifier getHandle() {
         return identifier;
     }
 

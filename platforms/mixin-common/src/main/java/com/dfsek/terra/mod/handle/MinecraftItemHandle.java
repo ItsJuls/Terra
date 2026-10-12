@@ -28,7 +28,7 @@ import net.minecraft.commands.arguments.item.ItemArgument;
 import net.minecraft.core.HolderLookup.RegistryLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.flag.FeatureFlagSet;
 import com.dfsek.terra.api.handle.ItemHandle;
 import com.dfsek.terra.api.inventory.Item;
@@ -56,7 +56,7 @@ public class MinecraftItemHandle implements ItemHandle {
                 public <T> Optional<RegistryLookup<T>> lookup(ResourceKey<? extends Registry<? extends T>> registryRef) {
                     return Optional.of(CommonPlatform.get().getServer().registryAccess().lookupOrThrow(registryRef));
                 }
-            }).parse(new StringReader(data)).getItem();
+            }).parse(new StringReader(data)).item().value();
         } catch(CommandSyntaxException e) {
             throw new IllegalArgumentException("Invalid item data \"" + data + "\"", e);
         }
@@ -64,7 +64,7 @@ public class MinecraftItemHandle implements ItemHandle {
 
     @Override
     public Enchantment getEnchantment(String id) {
-        return (Enchantment) (Object) (CommonPlatform.get().enchantmentRegistry().get(ResourceLocation.tryParse(id)));
+        return (Enchantment) (Object) (CommonPlatform.get().enchantmentRegistry().get(Identifier.tryParse(id)));
     }
 
     @Override

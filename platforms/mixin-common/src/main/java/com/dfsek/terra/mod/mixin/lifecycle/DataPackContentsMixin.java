@@ -19,6 +19,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.server.RegistryLayer;
 import net.minecraft.server.ReloadableServerRegistries;
 import net.minecraft.server.ReloadableServerResources;
+import net.minecraft.server.permissions.PermissionSet;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.level.biome.Biome;
@@ -37,13 +38,14 @@ public class DataPackContentsMixin {
      */
     @Inject(method = "loadResources(Lnet/minecraft/server/packs/resources/ResourceManager;Lnet/minecraft/core/LayeredRegistryAccess;Ljava/util/List;" +
                      "Lnet/minecraft/world/flag/FeatureFlagSet;" +
-                     "Lnet/minecraft/commands/Commands$CommandSelection;ILjava/util/concurrent/Executor;" +
+                     "Lnet/minecraft/commands/Commands$CommandSelection;Lnet/minecraft/server/permissions/PermissionSet;" +
+                     "Ljava/util/concurrent/Executor;" +
                      "Ljava/util/concurrent/Executor;)Ljava/util/concurrent/CompletableFuture;",
             at = @At("RETURN"))
     private static void injectReload(ResourceManager resourceManager,
                                      LayeredRegistryAccess<RegistryLayer> dynamicRegistries,
                                      List<PendingTags<?>> pendingTagLoads, FeatureFlagSet enabledFeatures,
-                                     Commands.CommandSelection environment, int functionPermissionLevel,
+                                     Commands.CommandSelection environment, PermissionSet functionPermissions,
                                      Executor prepareExecutor,
                                      Executor applyExecutor, CallbackInfoReturnable<CompletableFuture<ReloadableServerResources>> cir) {
         RegistryAccess.Frozen dynamicRegistryManager = dynamicRegistries.compositeAccess();

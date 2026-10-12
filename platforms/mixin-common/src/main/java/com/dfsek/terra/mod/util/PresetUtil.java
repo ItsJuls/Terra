@@ -11,7 +11,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.MultiNoiseBiomeSource;
 import net.minecraft.world.level.biome.MultiNoiseBiomeSourceParameterList;
@@ -37,9 +37,9 @@ import com.dfsek.terra.mod.generation.TerraBiomeSource;
 
 public class PresetUtil {
     private static final Logger LOGGER = LoggerFactory.getLogger(PresetUtil.class);
-    private static final List<Pair<ResourceLocation, Boolean>> PRESETS = new ArrayList<>();
+    private static final List<Pair<Identifier, Boolean>> PRESETS = new ArrayList<>();
 
-    public static Pair<ResourceLocation, WorldPreset> createDefault(ConfigPack pack, ModPlatform platform, boolean extended,
+    public static Pair<Identifier, WorldPreset> createDefault(ConfigPack pack, ModPlatform platform, boolean extended,
                                                               boolean packInMetapack) {
         Registry<DimensionType> dimensionTypeRegistry = platform.dimensionTypeRegistry();
         Registry<NoiseGeneratorSettings> chunkGeneratorSettingsRegistry = platform.chunkGeneratorSettingsRegistry();
@@ -47,7 +47,7 @@ public class PresetUtil {
             platform.multiNoiseBiomeSourceParameterListRegistry();
 
 
-        ResourceLocation generatorID = ResourceLocation.tryParse(
+        Identifier generatorID = Identifier.tryParse(
             "terra:" + pack.getID().toLowerCase(Locale.ROOT) + "/" + pack.getNamespace().toLowerCase(
                 Locale.ROOT));
 
@@ -66,13 +66,13 @@ public class PresetUtil {
         return Pair.of(generatorID, preset);
     }
 
-    public static Pair<ResourceLocation, WorldPreset> createMetaPackPreset(MetaPack metaPack, ModPlatform platform, boolean extended) {
+    public static Pair<Identifier, WorldPreset> createMetaPackPreset(MetaPack metaPack, ModPlatform platform, boolean extended) {
         Registry<DimensionType> dimensionTypeRegistry = platform.dimensionTypeRegistry();
         Registry<NoiseGeneratorSettings> chunkGeneratorSettingsRegistry = platform.chunkGeneratorSettingsRegistry();
         Registry<MultiNoiseBiomeSourceParameterList> multiNoiseBiomeSourceParameterLists =
             platform.multiNoiseBiomeSourceParameterListRegistry();
 
-        ResourceLocation generatorID = ResourceLocation.fromNamespaceAndPath("terra",
+        Identifier generatorID = Identifier.fromNamespaceAndPath("terra",
             metaPack.getID().toLowerCase(Locale.ROOT) + "/" + metaPack.getNamespace().toLowerCase(
                 Locale.ROOT));
 
@@ -95,7 +95,7 @@ public class PresetUtil {
     private static void insertCustom(ModPlatform platform, String key, ConfigPack pack, Registry<DimensionType> dimensionTypeRegistry,
                                      Registry<NoiseGeneratorSettings> chunkGeneratorSettingsRegistry,
                                      HashMap<ResourceKey<LevelStem>, LevelStem> dimensionMap, boolean packInMetapack) {
-        ResourceLocation demensionIdentifier = ResourceLocation.parse(key);
+        Identifier demensionIdentifier = Identifier.parse(key);
 
         VanillaWorldProperties vanillaWorldProperties;
 
@@ -105,11 +105,11 @@ public class PresetUtil {
             vanillaWorldProperties = new VanillaWorldProperties();
         }
 
-        DimensionType defaultDimension = dimensionTypeRegistry.getValue(ResourceLocation.parse(vanillaWorldProperties.getVanillaDimension()));
+        DimensionType defaultDimension = dimensionTypeRegistry.getValue(Identifier.parse(vanillaWorldProperties.getVanillaDimension()));
 
         assert defaultDimension != null;
 
-        ResourceLocation dimensionTypeID = ResourceLocation.fromNamespaceAndPath("terra", pack.getID().toLowerCase(Locale.ROOT));
+        Identifier dimensionTypeID = Identifier.fromNamespaceAndPath("terra", pack.getID().toLowerCase(Locale.ROOT));
 
         DimensionType dimensionType;
         if(!packInMetapack) {
@@ -127,7 +127,7 @@ public class PresetUtil {
         TerraBiomeSource biomeSource = new TerraBiomeSource(pack);
 
         Holder<NoiseGeneratorSettings> defaultGeneratorSettings = chunkGeneratorSettingsRegistry.wrapAsHolder(
-            chunkGeneratorSettingsRegistry.getValue(ResourceLocation.parse(vanillaWorldProperties.getVanillaGeneration())));
+            chunkGeneratorSettingsRegistry.getValue(Identifier.parse(vanillaWorldProperties.getVanillaGeneration())));
 
         GenerationSettings generatorSettings = new GenerationSettings(
             vanillaWorldProperties.getHeight() == null ? new ConstantRange(
@@ -200,7 +200,7 @@ public class PresetUtil {
         }
     }
 
-    public static List<Pair<ResourceLocation, Boolean>> getPresets() {
+    public static List<Pair<Identifier, Boolean>> getPresets() {
         return PRESETS;
     }
 }

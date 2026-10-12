@@ -31,7 +31,7 @@ import com.dfsek.terra.mod.implmentation.MinecraftEntityTypeExtended;
 import com.dfsek.terra.mod.mixin.access.MobSpawnerLogicAccessor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.BaseSpawner;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -56,7 +56,7 @@ public abstract class MobSpawnerBlockEntityMixin extends BlockEntity {
 
     public EntityType terra$getSpawnedType() {
         return (EntityType) BuiltInRegistries.ENTITY_TYPE.get(
-                ResourceLocation.tryParse(((MobSpawnerLogicAccessor) getSpawner()).getSpawnEntry().getEntityToSpawn().getString("id").orElseThrow()))
+                Identifier.tryParse(((MobSpawnerLogicAccessor) getSpawner()).getSpawnEntry().getEntityToSpawn().getString("id").orElseThrow()))
             .orElseThrow();
     }
 

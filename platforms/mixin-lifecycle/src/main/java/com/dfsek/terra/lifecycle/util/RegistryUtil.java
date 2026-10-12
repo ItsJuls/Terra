@@ -4,7 +4,7 @@ import com.dfsek.terra.mod.data.Codecs;
 import com.dfsek.terra.mod.util.MinecraftUtil;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 
 public final class RegistryUtil {
@@ -14,7 +14,7 @@ public final class RegistryUtil {
 
     public static void register() {
         MinecraftUtil.registerIntProviderTypes();
-        Registry.register(BuiltInRegistries.CHUNK_GENERATOR, ResourceLocation.parse("terra:terra"), Codecs.MINECRAFT_CHUNK_GENERATOR_WRAPPER);
-        Registry.register(BuiltInRegistries.BIOME_SOURCE, ResourceLocation.parse("terra:terra"), Codecs.TERRA_BIOME_SOURCE);
+        Registry.register(BuiltInRegistries.CHUNK_GENERATOR, Identifier.parse("terra:terra"), Codecs.MINECRAFT_CHUNK_GENERATOR_WRAPPER);
+        Registry.register(BuiltInRegistries.BIOME_SOURCE, Identifier.parse("terra:terra"), Codecs.TERRA_BIOME_SOURCE);
     }
 }

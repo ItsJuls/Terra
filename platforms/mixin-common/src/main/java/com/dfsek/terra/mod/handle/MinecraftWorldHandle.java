@@ -29,7 +29,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -91,13 +91,13 @@ public class MinecraftWorldHandle implements WorldHandle {
     @Override
     public @NotNull EntityType getEntity(@NotNull String data) {
         try {
-            ResourceLocation identifier;
+            Identifier identifier;
             CompoundTag nbtData = null;
             StringReader reader = new StringReader(data);
 
             int i = reader.getCursor();
 
-            identifier = ResourceLocation.read(reader);
+            identifier = Identifier.read(reader);
 
             net.minecraft.world.entity.EntityType<?> entity =
                 (net.minecraft.world.entity.EntityType<?>) ((Reference<?>) BuiltInRegistries.ENTITY_TYPE.get(
@@ -108,7 +108,7 @@ public class MinecraftWorldHandle implements WorldHandle {
 
             if(reader.canRead() && reader.peek() == '{') {
                 nbtData = TagParser.parseCompoundAsArgument(reader);
-                nbtData.putString("id", entity.builtInRegistryHolder().key().location().toString());
+                nbtData.putString("id", entity.builtInRegistryHolder().key().identifier().toString());
             }
 
             EntityType entityType;

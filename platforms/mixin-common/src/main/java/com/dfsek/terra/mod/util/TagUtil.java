@@ -52,7 +52,7 @@ public final class TagUtil {
 
         if(logger.isDebugEnabled()) {
             registry.listElements()
-                .map(e -> e.key().location() + ": " +
+                .map(e -> e.key().identifier() + ": " +
                           e.tags().reduce("", (s, t) -> t.location() + ", " + s, String::concat))
                 .forEach(logger::debug);
         }
@@ -76,11 +76,11 @@ public final class TagUtil {
                                         logger.debug(
                                             vanilla.unwrapKey()
                                                 .orElseThrow()
-                                                .location() +
+                                                .identifier() +
                                             " (vanilla for " +
                                             terra.unwrapKey()
                                                 .orElseThrow()
-                                                .location() +
+                                                .identifier() +
                                             ": " +
                                             vanilla.tags()
                                                 .toList());
@@ -102,7 +102,7 @@ public final class TagUtil {
 
         if(logger.isDebugEnabled()) {
             registry.listElements()
-                .map(e -> e.key().location() + ": " +
+                .map(e -> e.key().identifier() + ": " +
                           e.tags().reduce("", (s, t) -> t.location() + ", " + s, String::concat))
                 .forEach(logger::debug);
         }

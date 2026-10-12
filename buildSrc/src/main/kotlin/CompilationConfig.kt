@@ -84,3 +84,17 @@ fun Project.configureCompilation() {
         from(tasks.getByName<Javadoc>("javadoc").destinationDir)
     }
 }
+/**
+ * Compiles this project for a newer Java release than the project-wide default (21).
+ * Used by the platforms whose game version requires it (Minecraft 26.x requires Java 25).
+ */
+fun Project.javaRelease(version: Int) {
+    configure<JavaPluginExtension> {
+        sourceCompatibility = JavaVersion.toVersion(version)
+        targetCompatibility = JavaVersion.toVersion(version)
+    }
+
+    tasks.withType<JavaCompile>().configureEach {
+        options.release.set(version)
+    }
+}
