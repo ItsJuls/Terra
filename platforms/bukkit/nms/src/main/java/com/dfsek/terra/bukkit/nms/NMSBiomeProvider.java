@@ -4,6 +4,7 @@ import com.mojang.serialization.MapCodec;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.BiomeResolver;
 import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.biome.Climate.Sampler;
 import org.jetbrains.annotations.NotNull;
@@ -44,7 +45,11 @@ public class NMSBiomeProvider extends BiomeSource {
     }
 
     @Override
-    public @NotNull Holder<Biome> getNoiseBiome(int x, int y, int z, @NotNull Sampler sampler) {
+    public @NotNull BiomeResolver createResolver(@NotNull Sampler sampler) {
+        return this::getNoiseBiome;
+    }
+
+    public @NotNull Holder<Biome> getNoiseBiome(int x, int y, int z) {
         return biomeRegistry.getOrThrow(((BukkitPlatformBiome) delegate.getBiome(x << 2, y << 2, z << 2, seed)
             .getPlatformBiome()).getContext()
             .get(NMSBiomeInfo.class)
