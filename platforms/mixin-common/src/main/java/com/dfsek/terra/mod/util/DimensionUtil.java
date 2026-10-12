@@ -1,13 +1,12 @@
 package com.dfsek.terra.mod.util;
 
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.tag.TagKey;
-import net.minecraft.world.dimension.DimensionType;
-import net.minecraft.world.dimension.DimensionType.MonsterSettings;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.OptionalLong;
-
+import net.minecraft.core.registries.Registries;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.level.dimension.DimensionType;
+import net.minecraft.world.level.dimension.DimensionType.MonsterSettings;
 import com.dfsek.terra.mod.ModPlatform;
 import com.dfsek.terra.mod.config.MonsterSettingsConfig;
 import com.dfsek.terra.mod.config.VanillaWorldProperties;
@@ -32,7 +31,7 @@ public class DimensionUtil {
                 vanillaWorldProperties.getFixedTime()),
             vanillaWorldProperties.getHasSkyLight() == null ? defaultDimension.hasSkyLight() : vanillaWorldProperties.getHasSkyLight(),
             vanillaWorldProperties.getHasCeiling() == null ? defaultDimension.hasCeiling() : vanillaWorldProperties.getHasCeiling(),
-            vanillaWorldProperties.getUltraWarm() == null ? defaultDimension.ultrawarm() : vanillaWorldProperties.getUltraWarm(),
+            vanillaWorldProperties.getUltraWarm() == null ? defaultDimension.ultraWarm() : vanillaWorldProperties.getUltraWarm(),
             vanillaWorldProperties.getNatural() == null ? defaultDimension.natural() : vanillaWorldProperties.getNatural(),
             vanillaWorldProperties.getCoordinateScale() == null
             ? defaultDimension.coordinateScale()
@@ -48,8 +47,8 @@ public class DimensionUtil {
             : vanillaWorldProperties.getLogicalHeight(),
             vanillaWorldProperties.getInfiniburn() == null
             ? defaultDimension.infiniburn()
-            : TagKey.of(RegistryKeys.BLOCK, vanillaWorldProperties.getInfiniburn()),
-            vanillaWorldProperties.getEffects() == null ? defaultDimension.effects() : vanillaWorldProperties.getEffects(),
+            : TagKey.create(Registries.BLOCK, vanillaWorldProperties.getInfiniburn()),
+            vanillaWorldProperties.getEffects() == null ? defaultDimension.effectsLocation() : vanillaWorldProperties.getEffects(),
             vanillaWorldProperties.getAmbientLight() == null ? defaultDimension.ambientLight() : vanillaWorldProperties.getAmbientLight(),
             vanillaWorldProperties.getCloudHeight() == null
             ? defaultDimension.cloudHeight()

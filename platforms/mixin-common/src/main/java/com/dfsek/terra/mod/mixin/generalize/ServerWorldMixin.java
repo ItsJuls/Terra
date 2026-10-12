@@ -1,18 +1,18 @@
 package com.dfsek.terra.mod.mixin.generalize;
 
 
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.entry.RegistryEntry;
+import net.minecraft.core.Holder;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.random.RandomSequencesState;
-import net.minecraft.world.World;
-import net.minecraft.world.chunk.ChunkLoadProgress;
-import net.minecraft.world.dimension.DimensionOptions;
-import net.minecraft.world.dimension.DimensionTypes;
-import net.minecraft.world.level.ServerWorldProperties;
-import net.minecraft.world.level.storage.LevelStorage;
-import net.minecraft.world.spawner.SpecialSpawner;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.progress.LevelLoadListener;
+import net.minecraft.world.RandomSequences;
+import net.minecraft.world.level.CustomSpawner;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
+import net.minecraft.world.level.dimension.LevelStem;
+import net.minecraft.world.level.storage.LevelStorageSource;
+import net.minecraft.world.level.storage.ServerLevelData;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -22,23 +22,23 @@ import java.util.List;
 import java.util.concurrent.Executor;
 
 
-@Mixin(ServerWorld.class)
-public abstract class ServerWorldMixin extends World {
-    public ServerWorldMixin(MinecraftServer server, Executor workerExecutor, LevelStorage.Session session, ServerWorldProperties properties,
-                            RegistryKey<World> worldKey, DimensionOptions dimensionOptions,
-                            ChunkLoadProgress chunkLoadProgress, boolean debugWorld, long seed,
-                            List<SpecialSpawner> spawners, boolean shouldTickTime, @Nullable RandomSequencesState randomSequencesState) {
-        super(properties, worldKey, server.getRegistryManager(), dimensionOptions.dimensionTypeEntry(), false, debugWorld, seed,
+@Mixin(ServerLevel.class)
+public abstract class ServerWorldMixin extends Level {
+    public ServerWorldMixin(MinecraftServer server, Executor workerExecutor, LevelStorageSource.LevelStorageAccess session, ServerLevelData properties,
+                            ResourceKey<Level> worldKey, LevelStem dimensionOptions,
+                            LevelLoadListener chunkLoadProgress, boolean debugWorld, long seed,
+                            List<CustomSpawner> spawners, boolean shouldTickTime, @Nullable RandomSequences randomSequencesState) {
+        super(properties, worldKey, server.registryAccess(), dimensionOptions.type(), false, debugWorld, seed,
             server.getMaxChainedNeighborUpdates());
     }
 
     @Redirect(method = "<init>",
               at = @At(value = "INVOKE",
-                       target = "Lnet/minecraft/registry/entry/RegistryEntry;matchesKey(Lnet/minecraft/registry/RegistryKey;)Z"))
-    public <T> boolean matchesKeyProxy(RegistryEntry<T> instance, RegistryKey<T> tRegistryKey) {
-        if(tRegistryKey == DimensionTypes.THE_END) {
-            return (this.getRegistryKey() == World.END);
+                       target = "Lnet/minecraft/core/Holder;is(Lnet/minecraft/resources/ResourceKey;)Z"))
+    public <T> boolean matchesKeyProxy(Holder<T> instance, ResourceKey<T> tRegistryKey) {
+        if(tRegistryKey == BuiltinDimensionTypes.END) {
+            return (this.dimension() == Level.END);
         }
-        return instance.matchesKey(tRegistryKey);
+        return instance.is(tRegistryKey);
     }
 }

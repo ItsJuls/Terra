@@ -1,12 +1,11 @@
 package com.dfsek.terra.mod.mixin.spawn;
 
-import net.minecraft.block.Blocks;
-import net.minecraft.registry.tag.FluidTags;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.ServerWorldAccess;
-import net.minecraft.world.WorldAccess;
-
 import com.dfsek.terra.mod.generation.MinecraftChunkGeneratorWrapper;
+import net.minecraft.core.BlockPos;
+import net.minecraft.tags.FluidTags;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.block.Blocks;
 
 
 /**
@@ -23,9 +22,9 @@ public final class TerraWaterSpawns {
     }
 
     /** null = use vanilla's rule, otherwise the answer for this position */
-    public static Boolean anyHeight(WorldAccess world, BlockPos pos) {
-        if(!ENABLED || !(world instanceof ServerWorldAccess serverWorld)) return null;
-        if(!(serverWorld.toServerWorld().getChunkManager().getChunkGenerator() instanceof MinecraftChunkGeneratorWrapper)) return null;
-        return world.getFluidState(pos.down()).isIn(FluidTags.WATER) && world.getBlockState(pos.up()).isOf(Blocks.WATER);
+    public static Boolean anyHeight(LevelAccessor world, BlockPos pos) {
+        if(!ENABLED || !(world instanceof ServerLevelAccessor serverWorld)) return null;
+        if(!(serverWorld.getLevel().getChunkSource().getGenerator() instanceof MinecraftChunkGeneratorWrapper)) return null;
+        return world.getFluidState(pos.below()).is(FluidTags.WATER) && world.getBlockState(pos.above()).is(Blocks.WATER);
     }
 }

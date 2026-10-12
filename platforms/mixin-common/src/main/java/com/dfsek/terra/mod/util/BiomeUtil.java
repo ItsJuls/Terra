@@ -1,103 +1,101 @@
 package com.dfsek.terra.mod.util;
 
-import net.minecraft.registry.Registries;
-import net.minecraft.util.Identifier;
-import net.minecraft.world.biome.Biome;
-import net.minecraft.world.biome.Biome.Builder;
-import net.minecraft.world.biome.BiomeEffects;
-import net.minecraft.world.biome.GenerationSettings;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.Biome.BiomeBuilder;
+import net.minecraft.world.level.biome.BiomeGenerationSettings;
+import net.minecraft.world.level.biome.BiomeSpecialEffects;
 import com.dfsek.terra.api.config.ConfigPack;
 import com.dfsek.terra.mod.config.VanillaBiomeProperties;
 import com.dfsek.terra.mod.mixin.access.BiomeAccessor;
 
 
 public class BiomeUtil {
-    public static final Map<Identifier, List<Identifier>>
+    public static final Map<ResourceLocation, List<ResourceLocation>>
         TERRA_BIOME_MAP = new HashMap<>();
 
     public static Biome createBiome(Biome vanilla, VanillaBiomeProperties vanillaBiomeProperties) {
-        BiomeEffects.Builder effects = new BiomeEffects.Builder();
+        BiomeSpecialEffects.Builder effects = new BiomeSpecialEffects.Builder();
 
-        net.minecraft.world.biome.Biome.Builder builder = new Builder();
+        net.minecraft.world.level.biome.Biome.BiomeBuilder builder = new BiomeBuilder();
 
         effects.waterColor(Objects.requireNonNullElse(vanillaBiomeProperties.getWaterColor(), vanilla.getWaterColor()))
             .waterFogColor(Objects.requireNonNullElse(vanillaBiomeProperties.getWaterFogColor(), vanilla.getWaterFogColor()))
             .fogColor(Objects.requireNonNullElse(vanillaBiomeProperties.getFogColor(), vanilla.getFogColor()))
             .skyColor(Objects.requireNonNullElse(vanillaBiomeProperties.getSkyColor(), vanilla.getSkyColor()))
             .grassColorModifier(
-                Objects.requireNonNullElse(vanillaBiomeProperties.getGrassColorModifier(), vanilla.getEffects().getGrassColorModifier()))
-            .musicVolume(Objects.requireNonNullElse(vanillaBiomeProperties.getMusicVolume(), vanilla.getMusicVolume()));
+                Objects.requireNonNullElse(vanillaBiomeProperties.getGrassColorModifier(), vanilla.getSpecialEffects().getGrassColorModifier()))
+            .backgroundMusicVolume(Objects.requireNonNullElse(vanillaBiomeProperties.getMusicVolume(), vanilla.getBackgroundMusicVolume()));
 
         if(vanillaBiomeProperties.getGrassColor() == null) {
-            vanilla.getEffects().getGrassColor().ifPresent(effects::grassColor);
+            vanilla.getSpecialEffects().getGrassColorOverride().ifPresent(effects::grassColorOverride);
         } else {
-            effects.grassColor(vanillaBiomeProperties.getGrassColor());
+            effects.grassColorOverride(vanillaBiomeProperties.getGrassColor());
         }
 
         if(vanillaBiomeProperties.getFoliageColor() == null) {
-            vanilla.getEffects().getFoliageColor().ifPresent(effects::foliageColor);
+            vanilla.getSpecialEffects().getFoliageColorOverride().ifPresent(effects::foliageColorOverride);
         } else {
-            effects.foliageColor(vanillaBiomeProperties.getFoliageColor());
+            effects.foliageColorOverride(vanillaBiomeProperties.getFoliageColor());
         }
 
         if(vanillaBiomeProperties.getDryFoliageColor() == null) {
-            vanilla.getEffects().getDryFoliageColor().ifPresent(effects::dryFoliageColor);
+            vanilla.getSpecialEffects().getDryFoliageColorOverride().ifPresent(effects::dryFoliageColorOverride);
         } else {
-            effects.dryFoliageColor(vanillaBiomeProperties.getDryFoliageColor());
+            effects.dryFoliageColorOverride(vanillaBiomeProperties.getDryFoliageColor());
         }
 
         if(vanillaBiomeProperties.getParticleConfig() == null) {
-            vanilla.getEffects().getParticleConfig().ifPresent(effects::particleConfig);
+            vanilla.getSpecialEffects().getAmbientParticleSettings().ifPresent(effects::ambientParticle);
         } else {
-            effects.particleConfig(vanillaBiomeProperties.getParticleConfig());
+            effects.ambientParticle(vanillaBiomeProperties.getParticleConfig());
         }
 
         if(vanillaBiomeProperties.getLoopSound() == null) {
-            vanilla.getEffects().getLoopSound().ifPresent(effects::loopSound);
+            vanilla.getSpecialEffects().getAmbientLoopSoundEvent().ifPresent(effects::ambientLoopSound);
         } else {
-            effects.loopSound(Registries.SOUND_EVENT.getEntry(vanillaBiomeProperties.getLoopSound()));
+            effects.ambientLoopSound(BuiltInRegistries.SOUND_EVENT.wrapAsHolder(vanillaBiomeProperties.getLoopSound()));
         }
 
         if(vanillaBiomeProperties.getMoodSound() == null) {
-            vanilla.getEffects().getMoodSound().ifPresent(effects::moodSound);
+            vanilla.getSpecialEffects().getAmbientMoodSettings().ifPresent(effects::ambientMoodSound);
         } else {
-            effects.moodSound(vanillaBiomeProperties.getMoodSound());
+            effects.ambientMoodSound(vanillaBiomeProperties.getMoodSound());
         }
 
         if(vanillaBiomeProperties.getAdditionsSound() == null) {
-            vanilla.getEffects().getAdditionsSound().ifPresent(effects::additionsSound);
+            vanilla.getSpecialEffects().getAmbientAdditionsSettings().ifPresent(effects::ambientAdditionsSound);
         } else {
-            effects.additionsSound(vanillaBiomeProperties.getAdditionsSound());
+            effects.ambientAdditionsSound(vanillaBiomeProperties.getAdditionsSound());
         }
 
         if(vanillaBiomeProperties.getMusic() == null) {
-            vanilla.getEffects().getMusic().ifPresent(effects::music);
+            vanilla.getSpecialEffects().getBackgroundMusic().ifPresent(effects::backgroundMusic);
         } else {
-            effects.music(vanillaBiomeProperties.getMusic());
+            effects.backgroundMusic(vanillaBiomeProperties.getMusic());
         }
 
-        builder.precipitation(Objects.requireNonNullElse(vanillaBiomeProperties.getPrecipitation(), vanilla.hasPrecipitation()));
+        builder.hasPrecipitation(Objects.requireNonNullElse(vanillaBiomeProperties.getPrecipitation(), vanilla.hasPrecipitation()));
 
-        builder.temperature(Objects.requireNonNullElse(vanillaBiomeProperties.getTemperature(), vanilla.getTemperature()));
+        builder.temperature(Objects.requireNonNullElse(vanillaBiomeProperties.getTemperature(), vanilla.getBaseTemperature()));
 
         builder.downfall(Objects.requireNonNullElse(vanillaBiomeProperties.getDownfall(),
             ((BiomeAccessor) ((Object) vanilla)).getWeather().downfall()));
 
-        builder.temperatureModifier(Objects.requireNonNullElse(vanillaBiomeProperties.getTemperatureModifier(),
+        builder.temperatureAdjustment(Objects.requireNonNullElse(vanillaBiomeProperties.getTemperatureModifier(),
             ((BiomeAccessor) ((Object) vanilla)).getWeather().temperatureModifier()));
 
-        builder.spawnSettings(Objects.requireNonNullElse(vanillaBiomeProperties.getSpawnSettings(), vanilla.getSpawnSettings()));
+        builder.mobSpawnSettings(Objects.requireNonNullElse(vanillaBiomeProperties.getSpawnSettings(), vanilla.getMobSettings()));
 
         return builder
-            .effects(effects.build())
-            .generationSettings(new GenerationSettings.Builder().build())
+            .specialEffects(effects.build())
+            .generationSettings(new BiomeGenerationSettings.PlainBuilder().build())
             .build();
     }
 
@@ -106,7 +104,7 @@ public class BiomeUtil {
                    .toLowerCase() + "/" + biomeID.getNamespace().toLowerCase(Locale.ROOT) + "/" + biomeID.getID().toLowerCase(Locale.ROOT);
     }
 
-    public static Map<Identifier, List<Identifier>> getTerraBiomeMap() {
+    public static Map<ResourceLocation, List<ResourceLocation>> getTerraBiomeMap() {
         return Map.copyOf(TERRA_BIOME_MAP);
     }
 }

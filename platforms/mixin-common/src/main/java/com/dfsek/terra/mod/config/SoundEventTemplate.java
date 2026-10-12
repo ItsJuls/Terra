@@ -3,14 +3,14 @@ package com.dfsek.terra.mod.config;
 import com.dfsek.tectonic.api.config.template.annotations.Default;
 import com.dfsek.tectonic.api.config.template.annotations.Value;
 import com.dfsek.tectonic.api.config.template.object.ObjectTemplate;
-import net.minecraft.sound.SoundEvent;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 
 
 public class SoundEventTemplate implements ObjectTemplate<SoundEvent> {
     @Value("id")
     @Default
-    private Identifier id = null;
+    private ResourceLocation id = null;
 
     @Value("distance-to-travel")
     @Default
@@ -21,9 +21,9 @@ public class SoundEventTemplate implements ObjectTemplate<SoundEvent> {
         if(id == null) {
             return null;
         } else if(distanceToTravel == null) {
-            return SoundEvent.of(id);
+            return SoundEvent.createVariableRangeEvent(id);
         } else {
-            return SoundEvent.of(id, distanceToTravel);
+            return SoundEvent.createFixedRangeEvent(id, distanceToTravel);
         }
     }
 }

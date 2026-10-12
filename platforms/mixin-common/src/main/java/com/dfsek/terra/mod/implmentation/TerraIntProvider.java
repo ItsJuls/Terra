@@ -1,12 +1,10 @@
 package com.dfsek.terra.mod.implmentation;
 
-import net.minecraft.util.math.intprovider.IntProvider;
-import net.minecraft.util.math.intprovider.IntProviderType;
-import net.minecraft.util.math.random.Random;
-
 import java.util.HashMap;
 import java.util.Map;
-
+import net.minecraft.util.RandomSource;
+import net.minecraft.util.valueproviders.IntProvider;
+import net.minecraft.util.valueproviders.IntProviderType;
 import com.dfsek.terra.api.util.range.Range;
 import com.dfsek.terra.mod.util.MinecraftAdapter;
 
@@ -21,17 +19,17 @@ public class TerraIntProvider extends IntProvider {
     }
 
     @Override
-    public int get(Random random) {
+    public int sample(RandomSource random) {
         return delegate.get(MinecraftAdapter.adapt(random));
     }
 
     @Override
-    public int getMin() {
+    public int getMinValue() {
         return delegate.getMin();
     }
 
     @Override
-    public int getMax() {
+    public int getMaxValue() {
         return delegate.getMax();
     }
 
