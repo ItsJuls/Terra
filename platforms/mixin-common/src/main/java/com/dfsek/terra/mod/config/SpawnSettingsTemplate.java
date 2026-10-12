@@ -3,10 +3,11 @@ package com.dfsek.terra.mod.config;
 import com.dfsek.tectonic.api.config.template.annotations.Default;
 import com.dfsek.tectonic.api.config.template.annotations.Value;
 import com.dfsek.tectonic.api.config.template.object.ObjectTemplate;
-import net.minecraft.entity.SpawnGroup;
-import net.minecraft.world.biome.SpawnSettings;
-
 import java.util.List;
+import net.minecraft.util.random.WeightedList;
+import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.level.biome.MobSpawnSettings;
+import net.minecraft.world.level.biome.MobSpawnSettings.SpawnerData;
 
 
 public class SpawnSettingsTemplate implements ObjectTemplate<SpawnSettings> {
@@ -24,20 +25,18 @@ public class SpawnSettingsTemplate implements ObjectTemplate<SpawnSettings> {
 
     @Override
     public SpawnSettings get() {
-        SpawnSettings.Builder builder = new SpawnSettings.Builder();
+        MobSpawnSettings.Builder builder = new MobSpawnSettings.Builder();
         for(SpawnTypeConfig spawn : spawns) {
-            SpawnGroup group = spawn.getGroup();
+            MobCategory group = spawn.getGroup();
+            WeightedList.Builder<SpawnerData> entries = WeightedList.builder();
             for(SpawnEntryConfig entry : spawn.getEntries()) {
-                builder.spawn(group, entry.getWeight(), entry.getSpawnEntry());
+                entries.add(entry.getSpawnEntry(), entry.getWeight());
             }
+            builder.addAllSpawns(group, entries.build());
         }
         for(SpawnCostConfig cost : costs) {
-            builder.spawnCost(cost.getType(), cost.getMass(), cost.getGravity());
+            builder.addMobSpawnCost(cost.getType(), cost.getMass(), cost.getGravity());
         }
-        if(probability != null) {
-            builder.creatureSpawnProbability(probability);
-        }
-
-        return builder.build();
+        return new SpawnSettings(builder.build(), probability);
     }
 }

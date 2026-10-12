@@ -27,7 +27,12 @@ import com.dfsek.terra.api.block.state.BlockState;
 import com.dfsek.terra.api.entity.EntityType;
 import com.dfsek.terra.api.handle.WorldHandle;
 import com.dfsek.terra.bukkit.util.BukkitUtils;
+import com.dfsek.terra.bukkit.world.BukkitExtendedData;
+import com.dfsek.terra.bukkit.world.ExtendedDataBridge;
 import com.dfsek.terra.bukkit.world.block.data.BukkitBlockState;
+import com.dfsek.terra.bukkit.world.block.data.BukkitBlockStateExtended;
+import com.dfsek.terra.bukkit.world.entity.BukkitEntityType;
+import com.dfsek.terra.bukkit.world.entity.BukkitEntityTypeExtended;
 
 
 public class BukkitWorldHandle implements WorldHandle {
@@ -40,9 +45,25 @@ public class BukkitWorldHandle implements WorldHandle {
 
     @Override
     public synchronized @NotNull BlockState createBlockState(@NotNull String data) {
+        int nbtStart = data.indexOf('{');
+        String blockData = nbtStart == -1 ? data : data.substring(0, nbtStart);
         org.bukkit.block.data.BlockData bukkitData = Bukkit.createBlockData(
-            data); // somehow bukkit managed to make this not thread safe! :)
-        return BukkitBlockState.newInstance(bukkitData);
+            blockData); // somehow bukkit managed to make this not thread safe! :)
+        if(nbtStart == -1) {
+            return BukkitBlockState.newInstance(bukkitData);
+        }
+
+        String snbt = data.substring(nbtStart);
+        ExtendedDataBridge bridge = ExtendedDataBridge.get();
+        if(bridge == null) {
+            logger.warn("Block entity data is not supported without NMS bindings, ignoring {} of {}", snbt, blockData);
+            return BukkitBlockState.newInstance(bukkitData);
+        }
+        Object blockEntityData = bridge.prepareBlockEntityData(bukkitData, bridge.parseCompound(snbt));
+        if(blockEntityData == null) { // block has no block entity, like on other platforms the data is ignored.
+            return BukkitBlockState.newInstance(bukkitData);
+        }
+        return new BukkitBlockStateExtended(bukkitData, new BukkitExtendedData(snbt, blockEntityData));
     }
 
     @Override
@@ -52,6 +73,19 @@ public class BukkitWorldHandle implements WorldHandle {
 
     @Override
     public @NotNull EntityType getEntity(@NotNull String id) {
-        return BukkitUtils.getEntityType(id);
+        int nbtStart = id.indexOf('{');
+        if(nbtStart == -1) {
+            return BukkitUtils.getEntityType(id);
+        }
+
+        BukkitEntityType type = BukkitUtils.getEntityType(id.substring(0, nbtStart));
+        String snbt = id.substring(nbtStart);
+        ExtendedDataBridge bridge = ExtendedDataBridge.get();
+        if(bridge == null) {
+            logger.warn("Entity data is not supported without NMS bindings, ignoring {} of {}", snbt, type.getHandle());
+            return type;
+        }
+        return new BukkitEntityTypeExtended(type.getHandle(),
+            new BukkitExtendedData(snbt, bridge.prepareEntityData(type.getHandle(), bridge.parseCompound(snbt))));
     }
 }

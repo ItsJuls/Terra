@@ -2,28 +2,32 @@ package com.dfsek.terra.bukkit.nms;
 
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.server.level.WorldGenRegion;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelHeightAccessor;
 import net.minecraft.world.level.NoiseColumn;
 import net.minecraft.world.level.StructureManager;
 import net.minecraft.world.level.WorldGenLevel;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.Beardifier;
-import net.minecraft.world.level.levelgen.DensityFunction.SinglePointContext;
 import net.minecraft.world.level.levelgen.Heightmap.Types;
 import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.blending.Blender;
+import net.minecraft.world.level.levelgen.densityfunction.SamplerContext;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import com.dfsek.terra.api.config.ConfigPack;
@@ -57,18 +61,6 @@ public class NMSChunkGeneratorDelegate extends ChunkGenerator {
     }
 
     @Override
-    public void applyCarvers(@NotNull WorldGenRegion chunkRegion, long seed, @NotNull RandomState noiseConfig, @NotNull BiomeManager world,
-                             @NotNull StructureManager structureAccessor, @NotNull ChunkAccess chunk) {
-        // no-op
-    }
-
-    @Override
-    public void buildSurface(@NotNull WorldGenRegion region, @NotNull StructureManager structures, @NotNull RandomState noiseConfig,
-                             @NotNull ChunkAccess chunk) {
-        // no-op
-    }
-
-    @Override
     public void applyBiomeDecoration(@NotNull WorldGenLevel world, @NotNull ChunkAccess chunk,
                                      @NotNull StructureManager structureAccessor) {
         vanilla.applyBiomeDecoration(world, chunk, structureAccessor);
@@ -85,10 +77,11 @@ public class NMSChunkGeneratorDelegate extends ChunkGenerator {
     }
 
     @Override
-    public CompletableFuture<ChunkAccess> fillFromNoise(@NotNull Blender blender,
-                                                        @NotNull RandomState noiseConfig,
-                                                        @NotNull StructureManager structureAccessor, @NotNull ChunkAccess chunk) {
-        return vanilla.fillFromNoise(blender, noiseConfig, structureAccessor, chunk)
+    public CompletableFuture<ChunkAccess> buildTerrain(@NotNull ChunkAccess chunk, @NotNull Blender blender,
+                                                       @NotNull RandomState noiseConfig, @NotNull StructureManager structureAccessor,
+                                                       @NotNull BiomeManager biomeManager, @Nullable WorldGenRegion carverBiomeRegion,
+                                                       @NotNull Set<Holder<Biome>> possibleBiomes) {
+        return vanilla.buildTerrain(chunk, blender, noiseConfig, structureAccessor, biomeManager, carverBiomeRegion, possibleBiomes)
             .thenApply(c -> {
                 LevelAccessor level = Reflection.STRUCTURE_MANAGER.getLevel(structureAccessor);
                 BiomeProvider biomeProvider = pack.getBiomeProvider();
@@ -106,13 +99,13 @@ public class NMSChunkGeneratorDelegate extends ChunkGenerator {
         Beardifier structureWeightSampler = Beardifier.forStructuresInChunk(structureAccessor, chunk.getPos());
         double threshold = compatibilityOptions.getBeardThreshold();
         double airThreshold = compatibilityOptions.getAirThreshold();
-        int xi = chunk.getPos().x << 4;
-        int zi = chunk.getPos().z << 4;
+        int xi = chunk.getPos().x() << 4;
+        int zi = chunk.getPos().z() << 4;
         for(int x = 0; x < 16; x++) {
             for(int z = 0; z < 16; z++) {
                 int depth = 0;
                 for(int y = world.getMaxHeight(); y >= world.getMinHeight(); y--) {
-                    double noise = structureWeightSampler.compute(new SinglePointContext(x + xi, y, z + zi));
+                    double noise = structureWeightSampler.sampleValue(SamplerContext.EMPTY_UNCACHED, x + xi, y, z + zi);
                     if(noise > threshold) {
                         chunk.setBlockState(new BlockPos(x, y, z), ((CraftBlockData) ((BukkitBlockState) delegate
                             .getPalette(x + xi, y, z + zi, world, biomeProvider)
@@ -163,7 +156,8 @@ public class NMSChunkGeneratorDelegate extends ChunkGenerator {
     }
 
     @Override
-    public void addDebugScreenInfo(@NotNull List<String> text, @NotNull RandomState noiseConfig, @NotNull BlockPos pos) {
+    public void addDebugScreenInfo(@NotNull List<String> text, @NotNull RandomState noiseConfig, @NotNull BlockPos pos,
+                                   @NotNull SamplerContext samplerContext) {
 
     }
 }

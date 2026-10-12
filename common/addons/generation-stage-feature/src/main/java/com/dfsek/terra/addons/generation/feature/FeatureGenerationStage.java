@@ -19,6 +19,8 @@ import com.dfsek.terra.addons.generation.feature.config.BiomeFeatures;
 import com.dfsek.terra.api.Platform;
 import com.dfsek.terra.api.properties.PropertyKey;
 import com.dfsek.terra.api.registry.key.StringIdentifiable;
+import com.dfsek.terra.api.structure.Structure;
+import com.dfsek.terra.api.structure.feature.Feature;
 import com.dfsek.terra.api.world.WritableWorld;
 import com.dfsek.terra.api.world.chunk.generation.ProtoWorld;
 import com.dfsek.terra.api.world.chunk.generation.stage.GenerationStage;
@@ -26,11 +28,14 @@ import com.dfsek.terra.api.world.chunk.generation.util.Column;
 
 
 public class FeatureGenerationStage implements GenerationStage, StringIdentifiable {
-    private final Platform platform;
+    private static final RandomGeneratorFactory<RandomGenerator.SplittableGenerator> RANDOM_FACTORY = RandomGeneratorFactory.of(
+        "Xoroshiro128PlusPlus");
+
+    protected final Platform platform;
 
     private final String id;
 
-    private final String profile;
+    protected final String profile;
 
     private final int resolution;
     private final PropertyKey<BiomeFeatures> biomeFeaturesKey;
@@ -50,12 +55,28 @@ public class FeatureGenerationStage implements GenerationStage, StringIdentifiab
         this.blendAmplitude = blendAmplitude;
     }
 
+    protected static RandomGenerator random(long seed) {
+        return RANDOM_FACTORY.create(seed);
+    }
+
     @Override
     @SuppressWarnings("try")
     public void populate(ProtoWorld world) {
         platform.getProfiler().push(profile);
-        int cx = world.centerChunkX() << 4;
-        int cz = world.centerChunkZ() << 4;
+        forEachPlacement(world, world.centerChunkX(), world.centerChunkZ(),
+            (feature, structure, x, y, z, seed, rotation) -> structure.generate(Vector3Int.of(x, y, z), world, random(seed), rotation));
+        platform.getProfiler().pop(profile);
+    }
+
+    /**
+     * Find every feature placement whose origin is in a chunk.
+     *
+     * @param world    World to read biomes and terrain from. Locators read the terrain of this world.
+     * @param consumer Called for each placement, in a deterministic order.
+     */
+    protected void forEachPlacement(WritableWorld world, int originChunkX, int originChunkZ, PlacementConsumer consumer) {
+        int cx = originChunkX << 4;
+        int cz = originChunkZ << 4;
         long seed = world.getSeed();
         for(int chunkX = 0; chunkX < 16; chunkX += resolution) {
             for(int chunkZ = 0; chunkZ < 16; chunkZ += resolution) {
@@ -82,14 +103,11 @@ public class FeatureGenerationStage implements GenerationStage, StringIdentifiab
                                         if(feature.getDistributor().matches(x, z, seed)) {
                                             feature.getLocator()
                                                 .getSuitableCoordinates(column.clamp(min, max))
-                                                .forEach(y -> feature.getStructure(world, x, y, z)
-                                                    .generate(Vector3Int.of(x, y, z),
-                                                        world,
-                                                        RandomGeneratorFactory.<RandomGenerator.SplittableGenerator>of(
-                                                                "Xoroshiro128PlusPlus")
-                                                            .create(coordinateSeed * 31 + y),
-                                                        Rotation.NONE)
-                                                );
+                                                .forEach(y -> consumer.accept(feature,
+                                                    feature.getStructure(world, x, y, z),
+                                                    x, y, z,
+                                                    coordinateSeed * 31 + y,
+                                                    feature.getRotation(world, x, y, z)));
                                         }
                                         platform.getProfiler().pop(feature.getID());
                                     });
@@ -98,11 +116,15 @@ public class FeatureGenerationStage implements GenerationStage, StringIdentifiab
                     });
             }
         }
-        platform.getProfiler().pop(profile);
     }
 
     @Override
     public String getID() {
         return id;
+    }
+
+    @FunctionalInterface
+    protected interface PlacementConsumer {
+        void accept(Feature feature, Structure structure, int x, int y, int z, long seed, Rotation rotation);
     }
 }

@@ -3,10 +3,11 @@ package com.dfsek.terra.mod.config;
 import com.dfsek.tectonic.api.config.template.annotations.Default;
 import com.dfsek.tectonic.api.config.template.annotations.Value;
 import com.dfsek.tectonic.api.config.template.object.ObjectTemplate;
-import net.minecraft.entity.EntityType;
-import net.minecraft.world.biome.SpawnSettings.SpawnEntry;
-
 import com.dfsek.terra.api.util.range.Range;
+import net.minecraft.util.valueproviders.ConstantInt;
+import net.minecraft.util.valueproviders.UniformInt;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.level.biome.MobSpawnSettings.SpawnerData;
 
 
 public class SpawnEntryConfig implements ObjectTemplate<SpawnEntryConfig> {
@@ -26,8 +27,10 @@ public class SpawnEntryConfig implements ObjectTemplate<SpawnEntryConfig> {
         return weight;
     }
 
-    public SpawnEntry getSpawnEntry() {
-        return new SpawnEntry(type, groupSize.getMin(), groupSize.getMax());
+    public SpawnerData getSpawnEntry() {
+        return new SpawnerData(type, groupSize.getMin() == groupSize.getMax()
+                                     ? ConstantInt.of(groupSize.getMin())
+                                     : UniformInt.of(groupSize.getMin(), groupSize.getMax()));
     }
 
     @Override

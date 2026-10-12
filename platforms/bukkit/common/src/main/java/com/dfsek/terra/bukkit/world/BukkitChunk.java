@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import com.dfsek.terra.api.block.state.BlockState;
 import com.dfsek.terra.api.world.ServerWorld;
 import com.dfsek.terra.api.world.chunk.Chunk;
+import com.dfsek.terra.bukkit.world.block.data.BukkitBlockStateExtended;
 
 
 public class BukkitChunk implements Chunk {
@@ -39,11 +40,13 @@ public class BukkitChunk implements Chunk {
     @Override
     public void setBlock(int x, int y, int z, BlockState data, boolean physics) {
         delegate.getBlock(x, y, z).setBlockData(BukkitAdapter.adapt(data), physics);
+        loadBlockEntity(x, y, z, data);
     }
 
     @Override
     public void setBlock(int x, int y, int z, @NotNull BlockState blockState) {
         delegate.getBlock(x, y, z).setBlockData(BukkitAdapter.adapt(blockState));
+        loadBlockEntity(x, y, z, blockState);
     }
 
     @Override
@@ -64,5 +67,12 @@ public class BukkitChunk implements Chunk {
     @Override
     public ServerWorld getWorld() {
         return BukkitAdapter.adapt(delegate.getWorld());
+    }
+
+    private void loadBlockEntity(int x, int y, int z, BlockState data) {
+        if(data instanceof BukkitBlockStateExtended extended && ExtendedDataBridge.get() != null) {
+            ExtendedDataBridge.get().loadBlockEntity(delegate.getWorld(), (delegate.getX() << 4) + x, y, (delegate.getZ() << 4) + z,
+                extended.getData().handle());
+        }
     }
 }

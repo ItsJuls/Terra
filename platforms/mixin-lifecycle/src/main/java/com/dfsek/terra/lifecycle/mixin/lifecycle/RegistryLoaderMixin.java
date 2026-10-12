@@ -1,103 +1,126 @@
 package com.dfsek.terra.lifecycle.mixin.lifecycle;
 
-import com.llamalad7.mixinextras.sugar.Local;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.registry.DynamicRegistryManager;
-import net.minecraft.registry.MutableRegistry;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.RegistryLoader;
-import net.minecraft.registry.RegistryWrapper;
-import net.minecraft.resource.ResourceManager;
-import net.minecraft.world.biome.Biome;
-import net.minecraft.world.biome.source.MultiNoiseBiomeSourceParameterList;
-import net.minecraft.world.dimension.DimensionType;
-import net.minecraft.world.gen.WorldPreset;
-import net.minecraft.world.gen.chunk.ChunkGeneratorSettings;
-import org.slf4j.Logger;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
-
+import java.util.concurrent.atomic.AtomicReference;
+import net.minecraft.core.HolderGetter;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.Registry;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.WritableRegistry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.RegistryDataLoader;
+import net.minecraft.resources.RegistryLoadTask;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.MultiNoiseBiomeSourceParameterList;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.dimension.DimensionType;
+import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
+import net.minecraft.world.level.levelgen.presets.WorldPreset;
 import com.dfsek.terra.lifecycle.LifecyclePlatform;
+import com.dfsek.terra.lifecycle.mixin.access.RegistryLoadTaskAccessor;
 import com.dfsek.terra.lifecycle.util.LifecycleUtil;
 import com.dfsek.terra.lifecycle.util.RegistryHack;
 import com.dfsek.terra.mod.CommonPlatform;
 import com.dfsek.terra.mod.ModPlatform;
 
 
-@Mixin(RegistryLoader.class)
+@Mixin(RegistryDataLoader.class)
 public class RegistryLoaderMixin {
 
     @Unique
     private static final AtomicBoolean LOADING_DYNAMIC_REGISTRIES = new AtomicBoolean(false);
-    @Shadow
-    @Final
-    private static Logger LOGGER;
 
-    @Inject(method = "loadFromResource(Lnet/minecraft/resource/ResourceManager;Ljava/util/List;Ljava/util/List;)" +
-                     "Lnet/minecraft/registry/DynamicRegistryManager$Immutable;",
+    @Unique
+    private static final AtomicReference<List<HolderLookup.RegistryLookup<?>>> CONTEXT_REGISTRIES = new AtomicReference<>(List.of());
+
+    @Inject(method = "load(Lnet/minecraft/server/packs/resources/ResourceManager;Ljava/util/List;Ljava/util/List;" +
+                     "Ljava/util/concurrent/Executor;)Ljava/util/concurrent/CompletableFuture;",
             at = @At("HEAD"))
-    private static void loadFromResources(ResourceManager resourceManager, List<RegistryWrapper.Impl<?>> registries,
-                                          List<RegistryLoader.Entry<?>> entries,
-                                          CallbackInfoReturnable<DynamicRegistryManager.Immutable> cir) {
-        LOADING_DYNAMIC_REGISTRIES.set(entries.stream().anyMatch(entry -> entry.key() == RegistryKeys.BIOME));
+    private static void loadFromResources(ResourceManager resourceManager, List<HolderLookup.RegistryLookup<?>> contextRegistries,
+                                          List<RegistryDataLoader.RegistryData<?>> registriesToLoad, Executor executor,
+                                          CallbackInfoReturnable<CompletableFuture<RegistryAccess.Frozen>> cir) {
+        boolean loadingBiomes = registriesToLoad.stream().anyMatch(entry -> entry.key() == Registries.BIOME);
+        if(loadingBiomes) {
+            CONTEXT_REGISTRIES.set(contextRegistries);
+        }
+        LOADING_DYNAMIC_REGISTRIES.set(loadingBiomes);
     }
 
-    @Inject(
-        method = "load(Lnet/minecraft/registry/RegistryLoader$RegistryLoadable;Ljava/util/List;Ljava/util/List;)" +
-                 "Lnet/minecraft/registry/DynamicRegistryManager$Immutable;",
-        at = @At(
-            value = "INVOKE",
-            target = "Ljava/util/List;forEach(Ljava/util/function/Consumer;)V",
-            ordinal = 1
-        )
-    )
-    private static void beforeFreeze(@Coerce Object loadable, List<RegistryWrapper.Impl<?>> wrappers, List<RegistryLoader.Entry<?>> entries,
-                                     CallbackInfoReturnable<DynamicRegistryManager.Immutable> cir,
-                                     @Local(ordinal = 2) List<RegistryLoader.Loader<?>> registriesList) {
+    /**
+     * Runs once every registry of a load has been populated, right before the registries are frozen.
+     */
+    @Inject(method = "lambda$load$2(Ljava/util/List;Ljava/util/Map;Ljava/lang/Void;)Lnet/minecraft/core/RegistryAccess$Frozen;",
+            at = @At("HEAD"))
+    private static void beforeFreeze(List<RegistryLoadTask<?>> loadTasks, Map<ResourceKey<?>, Exception> loadingErrors, Void ignored,
+                                     CallbackInfoReturnable<RegistryAccess.Frozen> cir) {
+        if(loadTasks.stream().noneMatch(task -> getRegistry(task).key() == Registries.BIOME)) return;
         if(LOADING_DYNAMIC_REGISTRIES.getAndSet(false)) {
             ModPlatform platform = CommonPlatform.get();
             platform.getRawConfigRegistry().clear();
-            MutableRegistry<Biome> biomes = extractRegistry(registriesList, RegistryKeys.BIOME).orElseThrow();
-            MutableRegistry<DimensionType> dimensionTypes = extractRegistry(registriesList, RegistryKeys.DIMENSION_TYPE).orElseThrow();
-            MutableRegistry<WorldPreset> worldPresets = extractRegistry(registriesList, RegistryKeys.WORLD_PRESET).orElseThrow();
-            MutableRegistry<ChunkGeneratorSettings> chunkGeneratorSettings = extractRegistry(registriesList,
-                RegistryKeys.CHUNK_GENERATOR_SETTINGS).orElseThrow();
-            MutableRegistry<MultiNoiseBiomeSourceParameterList> multiNoiseBiomeSourceParameterLists = extractRegistry(registriesList,
-                RegistryKeys.MULTI_NOISE_BIOME_SOURCE_PARAMETER_LIST).orElseThrow();
-            MutableRegistry<Enchantment> enchantments = extractRegistry(registriesList, RegistryKeys.ENCHANTMENT).orElseThrow();
+            WritableRegistry<Biome> biomes = extractRegistry(loadTasks, Registries.BIOME).orElseThrow();
+            WritableRegistry<DimensionType> dimensionTypes = extractRegistry(loadTasks, Registries.DIMENSION_TYPE).orElseThrow();
+            WritableRegistry<WorldPreset> worldPresets = extractRegistry(loadTasks, Registries.WORLD_PRESET).orElseThrow();
+            WritableRegistry<NoiseGeneratorSettings> chunkGeneratorSettings = extractRegistry(loadTasks,
+                Registries.NOISE_SETTINGS).orElseThrow();
+            WritableRegistry<MultiNoiseBiomeSourceParameterList> multiNoiseBiomeSourceParameterLists = extractRegistry(loadTasks,
+                Registries.MULTI_NOISE_BIOME_SOURCE_PARAMETER_LIST).orElseThrow();
+            WritableRegistry<Enchantment> enchantments = extractRegistry(loadTasks, Registries.ENCHANTMENT).orElseThrow();
 
             LifecyclePlatform.setRegistries(biomes, dimensionTypes, chunkGeneratorSettings, multiNoiseBiomeSourceParameterLists,
-                enchantments);
+                enchantments, blockLookup());
             LifecycleUtil.initialize(biomes, worldPresets);
         }
     }
 
+    /**
+     * Block lookup from the load context. Unlike {@link BuiltInRegistries#BLOCK}, its tags are usable before tags are bound.
+     */
     @Unique
     @SuppressWarnings("unchecked")
-    private static <T> Optional<MutableRegistry<T>> extractRegistry(List<RegistryLoader.Loader<?>> instance,
-                                                                    RegistryKey<Registry<T>> key) {
-        List<? extends MutableRegistry<?>> matches = instance
-            .stream().map(RegistryLoader.Loader::registry)
-            .filter(r -> r.getKey().equals(key))
+    private static HolderGetter<Block> blockLookup() {
+        return CONTEXT_REGISTRIES.get()
+            .stream()
+            .filter(lookup -> lookup.key().equals(Registries.BLOCK))
+            .map(lookup -> (HolderGetter<Block>) lookup)
+            .findFirst()
+            .orElse(BuiltInRegistries.BLOCK);
+    }
+
+    @Unique
+    @SuppressWarnings("unchecked")
+    private static <T> WritableRegistry<T> getRegistry(RegistryLoadTask<T> task) {
+        return ((RegistryLoadTaskAccessor<T>) task).getRegistry();
+    }
+
+    @Unique
+    @SuppressWarnings("unchecked")
+    private static <T> Optional<WritableRegistry<T>> extractRegistry(List<RegistryLoadTask<?>> instance,
+                                                                    ResourceKey<Registry<T>> key) {
+        List<? extends WritableRegistry<?>> matches = instance
+            .stream().map(RegistryLoaderMixin::getRegistry)
+            .filter(r -> r.key().equals(key))
             .toList();
         if(matches.size() > 1) {
             throw new IllegalStateException("Illegal number of registries returned: " + matches);
         } else if(matches.isEmpty()) {
             return Optional.empty();
         }
-        MutableRegistry<T> registry = (MutableRegistry<T>) matches.getFirst();
+        WritableRegistry<T> registry = (WritableRegistry<T>) matches.getFirst();
         ((RegistryHack) registry).terra_bind();
         return Optional.of(registry);
     }

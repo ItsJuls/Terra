@@ -3,6 +3,8 @@ package com.dfsek.terra.bukkit.nms.config;
 import com.dfsek.tectonic.api.config.template.annotations.Default;
 import com.dfsek.tectonic.api.config.template.annotations.Value;
 import com.dfsek.tectonic.api.config.template.object.ObjectTemplate;
+import net.minecraft.util.valueproviders.ConstantInt;
+import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.biome.MobSpawnSettings.SpawnerData;
 
@@ -27,7 +29,9 @@ public class SpawnEntryConfig implements ObjectTemplate<SpawnEntryConfig> {
     }
 
     public SpawnerData getSpawnEntry() {
-        return new SpawnerData(type, groupSize.getMin(), groupSize.getMax());
+        return new SpawnerData(type, groupSize.getMin() == groupSize.getMax()
+                                     ? ConstantInt.of(groupSize.getMin())
+                                     : UniformInt.of(groupSize.getMin(), groupSize.getMax()));
     }
 
     @Override

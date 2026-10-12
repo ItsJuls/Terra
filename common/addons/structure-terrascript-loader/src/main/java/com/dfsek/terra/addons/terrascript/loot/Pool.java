@@ -5,7 +5,7 @@
  * reference the LICENSE file in this module's root directory.
  */
 
-package com.dfsek.terra.addons.structure.structures.loot;
+package com.dfsek.terra.addons.terrascript.loot;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;

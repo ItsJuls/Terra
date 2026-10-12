@@ -1,6 +1,5 @@
-version = version("1.0.1")
+version = version("1.0.2")
 
 dependencies {
-    api("com.googlecode.json-simple:json-simple:1.1.1")
     compileOnlyApi(project(":common:addons:manifest-addon-loader"))
 }

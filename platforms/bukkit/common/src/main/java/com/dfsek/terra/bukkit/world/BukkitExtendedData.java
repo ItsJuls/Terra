@@ -15,21 +15,23 @@
  * along with Terra.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.dfsek.terra.mod.mixin.access;
+package com.dfsek.terra.bukkit.world;
 
-import net.minecraft.state.State;
-import net.minecraft.state.property.Property;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.gen.Accessor;
-
-import java.util.Map;
-import java.util.function.Function;
+import com.dfsek.terra.api.data.ExtendedData;
 
 
-@Mixin(State.class)
-public interface StateAccessor {
-    @Accessor("PROPERTY_MAP_PRINTER")
-    static Function<Map.Entry<Property<?>, Comparable<?>>, String> getPropertyMapPrinter() {
-        throw new UnsupportedOperationException();
+/**
+ * NBT attached to a block state or entity type. The handle is the platform compound tag, prepared by
+ * {@link ExtendedDataBridge}.
+ */
+public record BukkitExtendedData(String snbt, Object handle) implements ExtendedData {
+    @Override
+    public Object getHandle() {
+        return handle;
+    }
+
+    @Override
+    public String toString() {
+        return snbt;
     }
 }

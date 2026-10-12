@@ -5,7 +5,7 @@
  * reference the LICENSE file in this module's root directory.
  */
 
-package com.dfsek.terra.addons.structure.structures.loot;
+package com.dfsek.terra.addons.terrascript.loot;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -57,7 +57,7 @@ public class LootTableImpl implements com.dfsek.terra.api.structure.LootTable {
                 if(slotItem == null) {
                     i.setItem(slot, newStack);
                     stack.setAmount(stack.getAmount() - 1);
-                } else if(slotItem.getType().equals(newStack.getType())) {
+                } else if(slotItem.isSimilar(newStack)) {
                     ItemStack dep = newStack.getType().newItemStack(newStack.getAmount());
                     dep.setItemMeta(newStack.getItemMeta());
                     dep.setAmount(newStack.getAmount() + slotItem.getAmount());

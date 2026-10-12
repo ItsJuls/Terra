@@ -1,3 +1,5 @@
+javaRelease(25)
+
 repositories {
 
 }

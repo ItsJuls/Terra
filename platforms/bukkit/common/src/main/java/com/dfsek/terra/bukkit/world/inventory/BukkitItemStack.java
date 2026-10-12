@@ -59,4 +59,9 @@ public class BukkitItemStack implements ItemStack {
     public org.bukkit.inventory.ItemStack getHandle() {
         return delegate;
     }
+
+    @Override
+    public boolean isSimilar(ItemStack other) {
+        return other instanceof BukkitItemStack bukkit && delegate.isSimilar(bukkit.getHandle());
+    }
 }

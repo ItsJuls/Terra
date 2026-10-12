@@ -7,9 +7,15 @@
 
 package com.dfsek.terra.addons.feature;
 
+import com.dfsek.seismic.type.Rotation;
 import com.dfsek.seismic.type.sampler.Sampler;
+import com.dfsek.tectonic.api.config.template.ValidatedConfigTemplate;
+import com.dfsek.tectonic.api.config.template.annotations.Default;
 import com.dfsek.tectonic.api.config.template.annotations.Final;
 import com.dfsek.tectonic.api.config.template.annotations.Value;
+import com.dfsek.tectonic.api.exception.ValidationException;
+
+import java.util.List;
 
 import com.dfsek.terra.api.config.AbstractableTemplate;
 import com.dfsek.terra.api.config.meta.Meta;
@@ -19,7 +25,7 @@ import com.dfsek.terra.api.structure.feature.Locator;
 import com.dfsek.terra.api.util.collection.ProbabilityCollection;
 
 
-public class FeatureTemplate implements AbstractableTemplate {
+public class FeatureTemplate implements AbstractableTemplate, ValidatedConfigTemplate {
     @Value("id")
     @Final
     private String id;
@@ -35,6 +41,10 @@ public class FeatureTemplate implements AbstractableTemplate {
 
     @Value("structures.structures")
     private @Meta ProbabilityCollection<Structure> structures;
+
+    @Value("structures.rotations")
+    @Default
+    private @Meta List<@Meta Rotation> rotations = List.of(Rotation.NONE);
 
     @Override
     public String getID() {
@@ -55,5 +65,15 @@ public class FeatureTemplate implements AbstractableTemplate {
 
     public ProbabilityCollection<Structure> getStructures() {
         return structures;
+    }
+
+    public List<Rotation> getRotations() {
+        return rotations;
+    }
+
+    @Override
+    public boolean validate() throws ValidationException {
+        if(rotations.isEmpty()) throw new ValidationException("structures.rotations must contain at least one rotation");
+        return true;
     }
 }

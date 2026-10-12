@@ -22,7 +22,9 @@ import org.jetbrains.annotations.NotNull;
 
 import com.dfsek.terra.api.block.state.BlockState;
 import com.dfsek.terra.api.world.chunk.generation.ProtoChunk;
+import com.dfsek.terra.bukkit.world.ExtendedDataBridge;
 import com.dfsek.terra.bukkit.world.block.data.BukkitBlockState;
+import com.dfsek.terra.bukkit.world.block.data.BukkitBlockStateExtended;
 
 
 public class BukkitProtoChunk implements ProtoChunk {
@@ -47,6 +49,9 @@ public class BukkitProtoChunk implements ProtoChunk {
     @Override
     public void setBlock(int x, int y, int z, @NotNull BlockState blockState) {
         delegate.setBlock(x, y, z, ((BukkitBlockState) blockState).getHandle());
+        if(blockState instanceof BukkitBlockStateExtended extended && ExtendedDataBridge.get() != null) {
+            ExtendedDataBridge.get().loadBlockEntity(delegate, x, y, z, extended.getData().handle());
+        }
     }
 
 

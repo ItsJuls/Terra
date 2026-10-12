@@ -6,13 +6,12 @@ import com.dfsek.tectonic.api.config.template.annotations.Value;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.Music;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.world.entity.npc.VillagerType;
-import net.minecraft.world.level.biome.AmbientAdditionsSettings;
-import net.minecraft.world.level.biome.AmbientMoodSettings;
-import net.minecraft.world.level.biome.AmbientParticleSettings;
+import net.minecraft.world.entity.npc.villager.VillagerType;
+import net.minecraft.world.attribute.AmbientAdditionsSettings;
+import net.minecraft.world.attribute.AmbientMoodSettings;
+import net.minecraft.world.attribute.AmbientParticle;
 import net.minecraft.world.level.biome.Biome.TemperatureModifier;
 import net.minecraft.world.level.biome.BiomeSpecialEffects.GrassColorModifier;
-import net.minecraft.world.level.biome.MobSpawnSettings;
 
 import com.dfsek.terra.api.properties.Properties;
 
@@ -52,7 +51,7 @@ public class VanillaBiomeProperties implements ConfigTemplate, Properties {
 
     @Value("particles")
     @Default
-    private AmbientParticleSettings particleConfig = null;
+    private AmbientParticle particleConfig = null;
 
     @Value("climate.precipitation")
     @Default
@@ -92,7 +91,7 @@ public class VanillaBiomeProperties implements ConfigTemplate, Properties {
 
     @Value("spawning")
     @Default
-    private MobSpawnSettings spawnSettings = null;
+    private SpawnSettings spawnSettings = null;
 
     @Value("villager-type")
     @Default
@@ -130,7 +129,7 @@ public class VanillaBiomeProperties implements ConfigTemplate, Properties {
         return grassColorModifier;
     }
 
-    public AmbientParticleSettings getParticleConfig() {
+    public AmbientParticle getParticleConfig() {
         return particleConfig;
     }
 
@@ -170,7 +169,7 @@ public class VanillaBiomeProperties implements ConfigTemplate, Properties {
         return musicVolume;
     }
 
-    public MobSpawnSettings getSpawnSettings() {
+    public SpawnSettings getSpawnSettings() {
         return spawnSettings;
     }
 

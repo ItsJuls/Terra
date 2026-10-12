@@ -3,18 +3,16 @@ package com.dfsek.terra.mod.config;
 import com.dfsek.tectonic.api.config.template.ConfigTemplate;
 import com.dfsek.tectonic.api.config.template.annotations.Default;
 import com.dfsek.tectonic.api.config.template.annotations.Value;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.sound.BiomeAdditionsSound;
-import net.minecraft.sound.BiomeMoodSound;
-import net.minecraft.sound.MusicSound;
-import net.minecraft.sound.SoundEvent;
-import net.minecraft.village.VillagerType;
-import net.minecraft.world.biome.Biome.TemperatureModifier;
-import net.minecraft.world.biome.BiomeEffects.GrassColorModifier;
-import net.minecraft.world.biome.BiomeParticleConfig;
-import net.minecraft.world.biome.SpawnSettings;
-
 import com.dfsek.terra.api.properties.Properties;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.sounds.Music;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.world.entity.npc.villager.VillagerType;
+import net.minecraft.world.attribute.AmbientAdditionsSettings;
+import net.minecraft.world.attribute.AmbientMoodSettings;
+import net.minecraft.world.attribute.AmbientParticle;
+import net.minecraft.world.level.biome.Biome.TemperatureModifier;
+import net.minecraft.world.level.biome.BiomeSpecialEffects.GrassColorModifier;
 
 
 public class VanillaBiomeProperties implements ConfigTemplate, Properties {
@@ -52,7 +50,7 @@ public class VanillaBiomeProperties implements ConfigTemplate, Properties {
 
     @Value("particles")
     @Default
-    private BiomeParticleConfig particleConfig = null;
+    private AmbientParticle particleConfig = null;
 
     @Value("climate.precipitation")
     @Default
@@ -76,15 +74,15 @@ public class VanillaBiomeProperties implements ConfigTemplate, Properties {
 
     @Value("sound.mood-sound")
     @Default
-    private BiomeMoodSound moodSound = null;
+    private AmbientMoodSettings moodSound = null;
 
     @Value("sound.additions-sound")
     @Default
-    private BiomeAdditionsSound additionsSound = null;
+    private AmbientAdditionsSettings additionsSound = null;
 
     @Value("sound.music")
     @Default
-    private MusicSound music = null;
+    private Music music = null;
 
     @Value("sound.music-volume")
     @Default
@@ -97,7 +95,7 @@ public class VanillaBiomeProperties implements ConfigTemplate, Properties {
     @Value("villager-type")
     @Default
     private
-    RegistryKey<VillagerType> villagerType = null;
+    ResourceKey<VillagerType> villagerType = null;
 
     public Integer getGrassColor() {
         return grassColor;
@@ -131,7 +129,7 @@ public class VanillaBiomeProperties implements ConfigTemplate, Properties {
         return grassColorModifier;
     }
 
-    public BiomeParticleConfig getParticleConfig() {
+    public AmbientParticle getParticleConfig() {
         return particleConfig;
     }
 
@@ -155,15 +153,15 @@ public class VanillaBiomeProperties implements ConfigTemplate, Properties {
         return loopSound;
     }
 
-    public BiomeMoodSound getMoodSound() {
+    public AmbientMoodSettings getMoodSound() {
         return moodSound;
     }
 
-    public BiomeAdditionsSound getAdditionsSound() {
+    public AmbientAdditionsSettings getAdditionsSound() {
         return additionsSound;
     }
 
-    public MusicSound getMusic() {
+    public Music getMusic() {
         return music;
     }
 
@@ -175,7 +173,7 @@ public class VanillaBiomeProperties implements ConfigTemplate, Properties {
         return spawnSettings;
     }
 
-    public RegistryKey<VillagerType> getVillagerType() {
+    public ResourceKey<VillagerType> getVillagerType() {
         return villagerType;
     }
 }
