@@ -11,6 +11,7 @@ import com.kitfox.svg.SVGException;
 import com.kitfox.svg.SVGUniverse;
 import com.kitfox.svg.ShapeElement;
 import com.kitfox.svg.xml.StyleAttribute;
+import org.locationtech.jts.algorithm.locate.IndexedPointInAreaLocator;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -79,7 +80,7 @@ public class VectorColorSamplerTemplate implements ObjectTemplate<ColorSampler> 
     }
 
 
-    private record CachedSvg(List<Polygon> polygons, STRtree spatialIndex, Map<Polygon, PreparedGeometry> preparedGeometryCache,
+    private record CachedSvg(List<Polygon> polygons, STRtree spatialIndex, Map<Polygon, IndexedPointInAreaLocator> locatorCache,
                              double width, double height) {
     }
 
@@ -131,7 +132,7 @@ public class VectorColorSamplerTemplate implements ObjectTemplate<ColorSampler> 
         return new VectorColorSampler(
             cached.polygons,
             cached.spatialIndex,
-            cached.preparedGeometryCache,
+            cached.locatorCache,
             fallback,
             cached.width,
             cached.height,
@@ -192,15 +193,15 @@ public class VectorColorSamplerTemplate implements ObjectTemplate<ColorSampler> 
 
             LOGGER.info("Building spatial index for {} polygons...", polygons.size());
             STRtree spatialIndex = new STRtree();
-            Map<Polygon, PreparedGeometry> preparedGeometryCache = new HashMap<>();
-            PreparedGeometryFactory prepFactory = new PreparedGeometryFactory();
-            Map<Polygon, PreparedGeometry> tempPrepCache = polygons.parallelStream()
+            // point-in-polygon locators for VectorColorSampler (their index is built lazily on first use)
+            Map<Polygon, IndexedPointInAreaLocator> locatorCache = new HashMap<>();
+            Map<Polygon, IndexedPointInAreaLocator> tempLocators = polygons.parallelStream()
                 .collect(Collectors.toConcurrentMap(
                     p -> p,
-                    prepFactory::create,
+                    IndexedPointInAreaLocator::new,
                     (existing, replacement) -> existing // Keep existing if duplicate
                 ));
-            preparedGeometryCache.putAll(tempPrepCache);
+            locatorCache.putAll(tempLocators);
             for (Polygon polygon : polygons) {
                 spatialIndex.insert(polygon.getEnvelopeInternal(), polygon);
             }
@@ -209,7 +210,7 @@ public class VectorColorSamplerTemplate implements ObjectTemplate<ColorSampler> 
 
             long loadTime = System.currentTimeMillis() - startTime;
             LOGGER.info("Successfully loaded {} polygons from SVG in {} ms", polygons.size(), loadTime);
-            return new CachedSvg(polygons, spatialIndex, preparedGeometryCache, shapes.width, shapes.height);
+            return new CachedSvg(polygons, spatialIndex, locatorCache, shapes.width, shapes.height);
 
         } catch (IOException e) {
             LOGGER.error("Failed to load SVG file: {}", pathString, e);

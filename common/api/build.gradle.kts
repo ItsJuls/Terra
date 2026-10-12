@@ -12,5 +12,5 @@ dependencies {
     api("com.dfsek.tectonic", "common", Versions.Libraries.tectonic)
     api("ca.solo-studios", "strata", Versions.Libraries.strata)
     api("com.dfsek", "paralithic", Versions.Libraries.paralithic)
-    api("com.dfsek", "seismic", Versions.Libraries.seismic)
+    api("com.dfsek", "seismic", Versions.Libraries.seismic) // replaced by the GitHub branch, see settings.gradle.kts
 }

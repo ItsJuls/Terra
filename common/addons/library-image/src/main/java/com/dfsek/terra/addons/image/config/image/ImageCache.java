@@ -49,11 +49,11 @@ record ImageCache(LoadingCache<String, Image> cache) implements Properties {
 
         if(config.loadOnUse()) {
             if(config.unloadOnTimeout()) { // Grab directly from cache if images are to unload on timeout
-                return new SuppliedImage(() -> images.cache.get(path));
+                return new SuppliedImage(() -> images.cache.get(path), () -> SuppliedImage.headerSize(pack.getRootPath().resolve(path))); // size from the file header, no decode
             } else {
                 // If images do not time out, image can be lazily loaded once instead of performing cache lookups for each image operation
                 Lazy<Image> lazyImage = Lazy.lazy(() -> images.cache.get(path));
-                return new SuppliedImage(lazyImage::value);
+                return new SuppliedImage(lazyImage::value, () -> SuppliedImage.headerSize(pack.getRootPath().resolve(path)));
             }
         }
 

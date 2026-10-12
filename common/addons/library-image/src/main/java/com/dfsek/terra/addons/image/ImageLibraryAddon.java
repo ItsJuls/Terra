@@ -25,6 +25,7 @@ import com.dfsek.terra.addons.image.noisesampler.PlacedCellularNoiseTemplate;
 import com.dfsek.terra.addons.image.noisesampler.config.ImageSeedSourceTemplate;
 import com.dfsek.terra.addons.image.noisesampler.config.JsonSeedSourceTemplate;
 import com.dfsek.terra.addons.image.noisesampler.config.PlacedCellularNoiseAttributeTemplate;
+import com.dfsek.terra.addons.image.noisesampler.config.VolcanoFieldSamplerTemplate;
 import com.dfsek.terra.addons.image.noisesampler.config.PointSeedSourceTemplate;
 import com.dfsek.terra.addons.image.noisesampler.seed.SeedSource;
 import com.dfsek.terra.addons.image.operator.DistanceTransform;
@@ -94,6 +95,7 @@ public class ImageLibraryAddon implements AddonInitializer {
                 noiseRegistry.register(addon.key("CHANNEL"), ChannelSamplerTemplate::new);
                 noiseRegistry.register(addon.key("PLACED_CELLULAR"), PlacedCellularNoiseTemplate::new);
                 noiseRegistry.register(addon.key("PLACED_CELLULAR_ATTRIBUTE"), PlacedCellularNoiseAttributeTemplate::new);
+                noiseRegistry.register(addon.key("VOLCANO_FIELD"), VolcanoFieldSamplerTemplate::new);
             })
             .then(event -> {
                 CheckedRegistry<Supplier<ObjectTemplate<ColorSampler>>> colorSamplerRegistry = event.getPack().getOrCreateRegistry(

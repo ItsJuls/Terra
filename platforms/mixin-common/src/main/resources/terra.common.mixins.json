@@ -40,7 +40,9 @@
         "implementations.terra.world.ServerWorldMixin",
         "invoke.BiomeInvoker",
         "invoke.FluidBlockInvoker",
-        "lifecycle.DataPackContentsMixin"
+        "lifecycle.DataPackContentsMixin",
+        "spawn.WaterAnimalSpawnMixin",
+        "spawn.WaterCreatureSpawnMixin"
     ],
     "client": [
     ],
