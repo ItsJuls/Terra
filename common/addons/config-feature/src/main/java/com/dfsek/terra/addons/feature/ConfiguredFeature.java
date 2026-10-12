@@ -7,7 +7,10 @@
 
 package com.dfsek.terra.addons.feature;
 
+import com.dfsek.seismic.type.Rotation;
 import com.dfsek.seismic.type.sampler.Sampler;
+
+import java.util.List;
 
 import com.dfsek.terra.api.structure.Structure;
 import com.dfsek.terra.api.structure.feature.Distributor;
@@ -24,10 +27,13 @@ public class ConfiguredFeature implements Feature {
     private final Distributor distributor;
     private final Locator locator;
 
+    private final List<Rotation> rotations;
+
     private final String id;
 
     public ConfiguredFeature(ProbabilityCollection<Structure> structures, Sampler structureSelector, Distributor distributor,
-                             Locator locator, String id) {
+                             Locator locator, List<Rotation> rotations, String id) {
+        this.rotations = List.copyOf(rotations);
         this.structures = structures;
         this.structureSelector = structureSelector;
         this.distributor = distributor;
@@ -38,6 +44,17 @@ public class ConfiguredFeature implements Feature {
     @Override
     public Structure getStructure(WritableWorld world, int x, int y, int z) {
         return structures.get(structureSelector, x, y, z, world.getSeed());
+    }
+
+    @Override
+    public Rotation getRotation(WritableWorld world, int x, int y, int z) {
+        if(rotations.size() == 1) return rotations.getFirst();
+        // Hash the location instead of drawing from the structure's random, so adding rotations doesn't change the structures themselves.
+        long hash = ((world.getSeed() * 31 + x) * 31 + y) * 31 + z;
+        hash = (hash ^ (hash >>> 30)) * 0xBF58476D1CE4E5B9L;
+        hash = (hash ^ (hash >>> 27)) * 0x94D049BB133111EBL;
+        hash ^= hash >>> 31;
+        return rotations.get((int) Math.floorMod(hash, (long) rotations.size()));
     }
 
     @Override
