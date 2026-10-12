@@ -9,13 +9,20 @@ package com.dfsek.terra.addons.terrascript;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Map;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
 import com.dfsek.terra.addons.manifest.api.AddonInitializer;
+import com.dfsek.terra.addons.terrascript.loot.LootTableImpl;
 import com.dfsek.terra.addons.terrascript.parser.exceptions.ParseException;
 import com.dfsek.terra.addons.terrascript.parser.lang.functions.FunctionBuilder;
 import com.dfsek.terra.addons.terrascript.script.StructureScript;
 import com.dfsek.terra.api.Platform;
 import com.dfsek.terra.api.addon.BaseAddon;
+import com.dfsek.terra.api.config.ConfigPack;
 import com.dfsek.terra.api.event.events.config.pack.ConfigPackPreLoadEvent;
 import com.dfsek.terra.api.event.functional.FunctionalEventHandler;
 import com.dfsek.terra.api.inject.annotations.Inject;
@@ -40,6 +47,7 @@ public class TerraScriptAddon implements AddonInitializer {
             .then(event -> {
                 CheckedRegistry<Structure> structureRegistry = event.getPack().getOrCreateRegistry(Structure.class);
                 CheckedRegistry<LootTable> lootRegistry = event.getPack().getOrCreateRegistry(LootTable.class);
+                loadLootTables(event.getPack(), lootRegistry);
                 try {
                     FileUtil.filesWithExtension(event.getPack().getRootPath(), ".tesf")
                         .entrySet()
@@ -65,5 +73,29 @@ public class TerraScriptAddon implements AddonInitializer {
             })
             .priority(100)
             .failThrough();
+    }
+
+    /**
+     * Loads every JSON file in the pack with a top level {@code pools} array as a loot table for {@code loot()}, with the
+     * file name as its ID.
+     */
+    private void loadLootTables(ConfigPack pack, CheckedRegistry<LootTable> lootRegistry) {
+        Map<String, Path> files;
+        try {
+            files = FileUtil.filesWithExtension(pack.getRootPath(), ".json");
+        } catch(IOException e) {
+            throw new RuntimeException("Error occurred while reading config pack files", e);
+        }
+        files.forEach((path, file) -> {
+            try {
+                String json = Files.readString(file);
+                if(!(new JSONParser().parse(json) instanceof JSONObject object) || !(object.get("pools") instanceof JSONArray)) {
+                    return; // some other JSON file
+                }
+                lootRegistry.register(addon.key(FileUtil.fileName(path)), new LootTableImpl(json, platform));
+            } catch(IOException | org.json.simple.parser.ParseException | RuntimeException e) {
+                throw new RuntimeException("Failed to load loot table \"" + path + "\"", e);
+            }
+        });
     }
 }

@@ -28,8 +28,8 @@ import com.dfsek.terra.api.block.entity.BlockEntity;
 import com.dfsek.terra.api.block.entity.Container;
 import com.dfsek.terra.api.event.events.world.generation.LootPopulateEvent;
 import com.dfsek.terra.api.registry.Registry;
-import com.dfsek.terra.api.registry.key.RegistryKey;
 import com.dfsek.terra.api.structure.LootTable;
+import com.dfsek.terra.api.util.FileUtil;
 
 
 public class LootFunction implements Function<Void> {
@@ -63,7 +63,9 @@ public class LootFunction implements Function<Void> {
         String id = data.apply(implementationArguments, scope);
 
 
-        registry.get(RegistryKey.parse(id))
+        // Loot tables are registered by file name; also accept Terra 5 style paths like "structures/loot/chest.json".
+        String tableId = id.endsWith(".json") ? FileUtil.fileName(id) : id;
+        registry.getByID(tableId)
             .ifPresentOrElse(table -> {
                     Vector3 apply = Vector3.of(FloatingPointFunctions.round(xz.getX()),
                         y.apply(implementationArguments, scope)

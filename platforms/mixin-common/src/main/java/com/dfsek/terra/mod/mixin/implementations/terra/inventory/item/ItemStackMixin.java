@@ -81,6 +81,11 @@ public abstract class ItemStackMixin {
         this.components.applyPatch(builder.build());
     }
 
+    @SuppressWarnings("ConstantConditions")
+    public boolean terra$isSimilar(com.dfsek.terra.api.inventory.ItemStack other) {
+        return ItemStack.isSameItemSameComponents((ItemStack) (Object) this, (ItemStack) (Object) other);
+    }
+
     @Intrinsic
     public boolean terra$isDamageable() {
         return isDamageableItem();

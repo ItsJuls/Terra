@@ -26,4 +26,15 @@ public interface ItemStack extends Handle {
     default boolean isDamageable() {
         return getItemMeta() instanceof Damageable;
     }
+
+    /**
+     * Whether this stack can stack with another, i.e. it is the same item with the same data, ignoring the amount.
+     *
+     * @param other Other stack
+     *
+     * @return Whether the stacks are similar
+     */
+    default boolean isSimilar(ItemStack other) {
+        return getType().equals(other.getType());
+    }
 }

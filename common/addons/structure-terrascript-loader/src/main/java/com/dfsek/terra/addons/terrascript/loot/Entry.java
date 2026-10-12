@@ -5,7 +5,7 @@
  * reference the LICENSE file in this module's root directory.
  */
 
-package com.dfsek.terra.addons.structure.structures.loot;
+package com.dfsek.terra.addons.terrascript.loot;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -14,10 +14,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.random.RandomGenerator;
 
-import com.dfsek.terra.addons.structure.structures.loot.functions.AmountFunction;
-import com.dfsek.terra.addons.structure.structures.loot.functions.DamageFunction;
-import com.dfsek.terra.addons.structure.structures.loot.functions.EnchantFunction;
-import com.dfsek.terra.addons.structure.structures.loot.functions.LootFunction;
+import com.dfsek.terra.addons.terrascript.loot.functions.AmountFunction;
+import com.dfsek.terra.addons.terrascript.loot.functions.DamageFunction;
+import com.dfsek.terra.addons.terrascript.loot.functions.EnchantFunction;
+import com.dfsek.terra.addons.terrascript.loot.functions.LootFunction;
 import com.dfsek.terra.api.Platform;
 import com.dfsek.terra.api.inventory.Item;
 import com.dfsek.terra.api.inventory.ItemStack;

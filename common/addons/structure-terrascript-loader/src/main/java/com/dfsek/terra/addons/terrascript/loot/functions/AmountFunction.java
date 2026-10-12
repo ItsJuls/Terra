@@ -5,7 +5,7 @@
  * reference the LICENSE file in this module's root directory.
  */
 
-package com.dfsek.terra.addons.structure.structures.loot.functions;
+package com.dfsek.terra.addons.terrascript.loot.functions;
 
 
 import java.util.random.RandomGenerator;
