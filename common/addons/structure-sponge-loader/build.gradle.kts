@@ -1,4 +1,4 @@
-version = version("1.0.0")
+version = version("1.1.0")
 
 dependencies {
     api("commons-io", "commons-io", Versions.Libraries.Internal.apacheIO)
