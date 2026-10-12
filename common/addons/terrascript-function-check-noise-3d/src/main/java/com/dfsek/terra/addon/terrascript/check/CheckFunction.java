@@ -64,7 +64,7 @@ public class CheckFunction implements Function<String> {
 
     private String apply(Vector3 vector, WritableWorld world) {
         int y = vector.getFloorY();
-        if(y >= world.getMaxHeight() || y < 0) return "AIR";
+        if(y >= world.getMaxHeight() || y < world.getMinHeight()) return "AIR";
         SamplerProvider cache = ((NoiseChunkGenerator3D) world.getGenerator()).samplerProvider();
         double comp = sample(vector.getX(), vector.getY(), vector.getZ(), cache, world);
 

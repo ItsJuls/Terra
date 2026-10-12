@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2020-2025 Polyhedral Development
+ *
+ * The Terra Core Addons are licensed under the terms of the MIT License. For more details,
+ * reference the LICENSE file in this module's root directory.
+ */
+
+package com.dfsek.terra.addon.terrascript.check;
+
+import java.util.List;
+
+import com.dfsek.terra.addons.terrascript.parser.lang.Returnable;
+import com.dfsek.terra.addons.terrascript.parser.lang.functions.FunctionBuilder;
+import com.dfsek.terra.addons.terrascript.tokenizer.Position;
+
+
+public class SurfaceFunctionBuilder implements FunctionBuilder<SurfaceFunction> {
+    @SuppressWarnings("unchecked")
+    @Override
+    public SurfaceFunction build(List<Returnable<?>> argumentList, Position position) {
+        return new SurfaceFunction((Returnable<Number>) argumentList.get(0), (Returnable<Number>) argumentList.get(1), position);
+    }
+
+    @Override
+    public int argNumber() {
+        return 2;
+    }
+
+    @Override
+    public Returnable.ReturnType getArgument(int position) {
+        return switch(position) {
+            case 0, 1 -> Returnable.ReturnType.NUMBER;
+            default -> null;
+        };
+    }
+}
