@@ -7,3 +7,4 @@ website: "@WIKI@"
 api-version: "26.3"
 description: "@DESCRIPTION@"
 folia-supported: true
+softdepend: [ "Nexo", "CustomCrops" ]

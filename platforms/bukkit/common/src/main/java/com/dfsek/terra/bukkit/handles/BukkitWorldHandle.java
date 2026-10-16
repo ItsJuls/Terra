@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import com.dfsek.terra.api.block.state.BlockState;
 import com.dfsek.terra.api.entity.EntityType;
 import com.dfsek.terra.api.handle.WorldHandle;
+import com.dfsek.terra.bukkit.integration.PluginBlocks;
 import com.dfsek.terra.bukkit.util.BukkitUtils;
 import com.dfsek.terra.bukkit.world.BukkitExtendedData;
 import com.dfsek.terra.bukkit.world.ExtendedDataBridge;
@@ -45,6 +46,9 @@ public class BukkitWorldHandle implements WorldHandle {
 
     @Override
     public synchronized @NotNull BlockState createBlockState(@NotNull String data) {
+        BlockState pluginBlock = PluginBlocks.parse(data);
+        if(pluginBlock != null) return pluginBlock;
+
         int nbtStart = data.indexOf('{');
         String blockData = nbtStart == -1 ? data : data.substring(0, nbtStart);
         org.bukkit.block.data.BlockData bukkitData = Bukkit.createBlockData(

@@ -30,6 +30,8 @@ import com.dfsek.terra.api.world.chunk.Chunk;
 import com.dfsek.terra.api.world.chunk.generation.ChunkGenerator;
 import com.dfsek.terra.bukkit.BukkitEntity;
 import com.dfsek.terra.bukkit.generator.BukkitChunkGeneratorWrapper;
+import com.dfsek.terra.bukkit.integration.PendingPlacements;
+import com.dfsek.terra.bukkit.integration.PlacementBlockState;
 import com.dfsek.terra.bukkit.world.block.data.BukkitBlockStateExtended;
 import com.dfsek.terra.bukkit.world.block.state.BukkitBlockEntity;
 import com.dfsek.terra.bukkit.world.entity.BukkitEntityType;
@@ -55,6 +57,11 @@ public class BukkitServerWorld implements ServerWorld {
 
     @Override
     public void setBlockState(int x, int y, int z, BlockState data, boolean physics) {
+        if(data instanceof PlacementBlockState placement && placement.immediate() == null) {
+            delegate.getBlockAt(x, y, z).setBlockData(placement.getHandle(), physics);
+            PendingPlacements.placeNow(delegate, x, y, z, placement.placement());
+            return;
+        }
         delegate.getBlockAt(x, y, z).setBlockData(BukkitAdapter.adapt(data), physics);
         if(data instanceof BukkitBlockStateExtended extended && ExtendedDataBridge.get() != null) {
             ExtendedDataBridge.get().loadBlockEntity(delegate, x, y, z, extended.getData().handle());

@@ -42,7 +42,7 @@ public class BukkitBlockState implements BlockState {
 
     @Override
     public boolean matches(BlockState data) {
-        return delegate.getMaterial() == ((BukkitBlockState) data).getHandle().getMaterial();
+        return getHandle().getMaterial() == ((BukkitBlockState) data).getHandle().getMaterial();
     }
 
     @Override
@@ -62,16 +62,16 @@ public class BukkitBlockState implements BlockState {
 
     @Override
     public BlockType getBlockType() {
-        return BukkitAdapter.adapt(delegate.getMaterial());
+        return BukkitAdapter.adapt(getHandle().getMaterial());
     }
 
     @Override
     public String getAsString(boolean properties) {
-        return delegate.getAsString(!properties);
+        return getHandle().getAsString(!properties);
     }
 
     @Override
     public boolean isAir() {
-        return delegate.getMaterial().isAir();
+        return getHandle().getMaterial().isAir();
     }
 }

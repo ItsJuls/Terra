@@ -21,6 +21,8 @@ import com.dfsek.terra.api.world.chunk.generation.ChunkGenerator;
 import com.dfsek.terra.api.world.chunk.generation.ProtoWorld;
 import com.dfsek.terra.bukkit.BukkitEntity;
 import com.dfsek.terra.bukkit.generator.BukkitChunkGeneratorWrapper;
+import com.dfsek.terra.bukkit.integration.PendingPlacements;
+import com.dfsek.terra.bukkit.integration.PlacementBlockState;
 import com.dfsek.terra.bukkit.util.BukkitUtils;
 import com.dfsek.terra.bukkit.world.block.data.BukkitBlockState;
 import com.dfsek.terra.bukkit.world.block.data.BukkitBlockStateExtended;
@@ -52,6 +54,16 @@ public class BukkitProtoWorld implements ProtoWorld {
     public void setBlockState(int x, int y, int z, BlockState data, boolean physics) {
         access(x, y, z, () -> {
             BlockData bukkitData = BukkitAdapter.adapt(data);
+            if(data instanceof PlacementBlockState placement) {
+                BlockData now = placement.immediate();
+                if(now == null) {
+                    // Another plugin places this once the chunk has loaded; clear the spot for it.
+                    delegate.setBlockData(x, y, z, bukkitData);
+                    PendingPlacements.add(delegate.getWorld(), x, y, z, placement.placement());
+                    return;
+                }
+                bukkitData = now;
+            }
             delegate.setBlockData(x, y, z, bukkitData);
             if(data instanceof BukkitBlockStateExtended extended && ExtendedDataBridge.get() != null) {
                 ExtendedDataBridge.get().loadBlockEntity(delegate, x, y, z, extended.getData().handle());

@@ -39,6 +39,7 @@ import com.dfsek.terra.api.config.ConfigPack;
 import com.dfsek.terra.api.event.events.platform.CommandRegistrationEvent;
 import com.dfsek.terra.api.event.events.platform.PlatformInitializationEvent;
 import com.dfsek.terra.bukkit.generator.BukkitChunkGeneratorWrapper;
+import com.dfsek.terra.bukkit.integration.PendingPlacements;
 import com.dfsek.terra.bukkit.listeners.CommonListener;
 import com.dfsek.terra.bukkit.util.PaperUtil;
 import com.dfsek.terra.bukkit.util.VersionUtil;
@@ -84,7 +85,13 @@ public class TerraBukkitPlugin extends JavaPlugin {
         }
 
         Bukkit.getPluginManager().registerEvents(new CommonListener(platform), this); // Register master event listener
+        PendingPlacements.enable(this); // Nexo furniture, CustomCrops crops, ... placed once their chunks load
         PaperUtil.checkPaper(this);
+    }
+
+    @Override
+    public void onDisable() {
+        PendingPlacements.disable();
     }
 
     @NotNull

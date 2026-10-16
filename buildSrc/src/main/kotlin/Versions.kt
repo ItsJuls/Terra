@@ -68,6 +68,8 @@ object Versions {
         const val paperWeight = "2.0.0-beta.24"
         const val cloud = "2.0.1"
         const val multiverse = "5.3.0"
+        const val nexo = "1.29.1"
+        const val customCrops = "3.6.52"
     }
     
 //
